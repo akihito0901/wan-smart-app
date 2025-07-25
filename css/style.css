@@ -270,11 +270,12 @@ header {
     overflow: hidden;
     border: 3px solid #ddd;
     transition: all 0.3s ease;
+    cursor: pointer;
 }
 
 .profile-avatar:hover {
     border-color: #4a90e2;
-    transform: scale(1.05);
+    transform: scale(1.02);
 }
 
 #avatar-image {
@@ -285,50 +286,105 @@ header {
 }
 
 .default-avatar {
-    font-size: 50px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #666;
+    position: relative;
 }
 
-.add-photo-btn, .remove-photo-btn {
+.add-photo-icon {
     position: absolute;
-    width: 35px;
-    height: 35px;
+    bottom: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    background: #4a90e2;
+    color: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
     font-size: 20px;
     font-weight: bold;
-    transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
 }
 
-.add-photo-btn {
-    background: linear-gradient(135deg, #4a90e2, #357abd);
-    color: white;
-    bottom: 5px;
-    right: 5px;
-}
-
-.add-photo-btn:hover {
-    background: linear-gradient(135deg, #357abd, #2968a3);
+.profile-avatar:hover .add-photo-icon {
+    background: #357abd;
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
 }
 
-.remove-photo-btn {
-    background: linear-gradient(135deg, #dc3545, #c82333);
+.photo-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.overlay-content {
+    background: white;
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    width: 100%;
+    max-width: 400px;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+.overlay-btn {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    margin-bottom: 10px;
+    border: none;
+    background: #f8f9fa;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.overlay-btn:hover {
+    background: #e9ecef;
+    transform: translateY(-1px);
+}
+
+.overlay-btn.remove {
+    color: #dc3545;
+}
+
+.overlay-btn.remove:hover {
+    background: #f8d7da;
+}
+
+.overlay-btn.cancel {
+    background: #4a90e2;
     color: white;
-    bottom: 5px;
-    right: 5px;
-    font-size: 18px;
+    margin-bottom: 0;
 }
 
-.remove-photo-btn:hover {
-    background: linear-gradient(135deg, #c82333, #a71e2a);
-    transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+.overlay-btn.cancel:hover {
+    background: #357abd;
 }
 
 /* フォーム */

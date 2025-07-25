@@ -85,12 +85,27 @@ function setupEventListeners() {
     document.getElementById('filter-week').addEventListener('click', () => loadWalkHistory('week'));
     document.getElementById('filter-month').addEventListener('click', () => loadWalkHistory('month'));
     
-    // プロフィール画像アップロード
-    document.getElementById('add-photo-btn').addEventListener('click', () => {
+    // プロフィール画像アップロード（インスタグラム風）
+    document.getElementById('user-avatar').addEventListener('click', handleAvatarClick);
+    document.getElementById('avatar-input').addEventListener('change', handleAvatarUpload);
+    
+    // オーバーレイボタン
+    document.getElementById('change-photo-btn').addEventListener('click', () => {
+        hidePhotoOverlay();
         document.getElementById('avatar-input').click();
     });
-    document.getElementById('avatar-input').addEventListener('change', handleAvatarUpload);
-    document.getElementById('remove-photo-btn').addEventListener('click', removeAvatar);
+    document.getElementById('remove-photo-btn').addEventListener('click', () => {
+        hidePhotoOverlay();
+        removeAvatar();
+    });
+    document.getElementById('cancel-btn').addEventListener('click', hidePhotoOverlay);
+    
+    // オーバーレイの背景クリックで閉じる
+    document.getElementById('photo-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'photo-overlay') {
+            hidePhotoOverlay();
+        }
+    });
 }
 
 // Googleログイン処理
@@ -896,10 +911,10 @@ async function handleAvatarUpload(event) {
     }
     
     try {
-        // ローディング表示
-        const addBtn = document.getElementById('add-photo-btn');
-        addBtn.textContent = '⏳';
-        addBtn.style.pointerEvents = 'none';
+        // ローディング表示（プロフィール画像全体をローディング状態に）
+        const avatar = document.getElementById('user-avatar');
+        avatar.style.opacity = '0.6';
+        avatar.style.pointerEvents = 'none';
         
         // ファイルをBase64に変換
         const base64String = await convertToBase64(file);
@@ -920,10 +935,10 @@ async function handleAvatarUpload(event) {
         console.error('画像処理エラー:', error);
         alert('画像の処理に失敗しました');
     } finally {
-        // ボタンを元に戻す
-        const addBtn = document.getElementById('add-photo-btn');
-        addBtn.textContent = '+';
-        addBtn.style.pointerEvents = 'auto';
+        // ローディング状態を元に戻す
+        const avatar = document.getElementById('user-avatar');
+        avatar.style.opacity = '1';
+        avatar.style.pointerEvents = 'auto';
         // ファイル入力をリセット
         event.target.value = '';
     }
@@ -961,29 +976,55 @@ async function removeAvatar() {
     }
 }
 
+// インスタグラム風のアバタークリック処理
+function handleAvatarClick() {
+    const avatarImage = document.getElementById('avatar-image');
+    const hasPhoto = avatarImage.style.display === 'block';
+    
+    if (hasPhoto) {
+        // 写真がある場合はオーバーレイを表示
+        showPhotoOverlay();
+    } else {
+        // 写真がない場合は直接ファイル選択
+        document.getElementById('avatar-input').click();
+    }
+}
+
+// フォトオーバーレイを表示
+function showPhotoOverlay() {
+    document.getElementById('photo-overlay').classList.remove('hidden');
+    // ESCキーでも閉じられるように
+    document.addEventListener('keydown', handleEscKey);
+}
+
+// フォトオーバーレイを隠す
+function hidePhotoOverlay() {
+    document.getElementById('photo-overlay').classList.add('hidden');
+    document.removeEventListener('keydown', handleEscKey);
+}
+
+// ESCキーでオーバーレイを閉じる
+function handleEscKey(e) {
+    if (e.key === 'Escape') {
+        hidePhotoOverlay();
+    }
+}
+
 function displayAvatar(url) {
     const avatarImage = document.getElementById('avatar-image');
     const defaultAvatar = document.getElementById('default-avatar');
-    const addBtn = document.getElementById('add-photo-btn');
-    const removeBtn = document.getElementById('remove-photo-btn');
     
     avatarImage.src = url;
     avatarImage.style.display = 'block';
     defaultAvatar.style.display = 'none';
-    addBtn.classList.add('hidden');
-    removeBtn.classList.remove('hidden');
 }
 
 function showDefaultAvatar() {
     const avatarImage = document.getElementById('avatar-image');
     const defaultAvatar = document.getElementById('default-avatar');
-    const addBtn = document.getElementById('add-photo-btn');
-    const removeBtn = document.getElementById('remove-photo-btn');
     
     avatarImage.style.display = 'none';
-    defaultAvatar.style.display = 'block';
-    addBtn.classList.remove('hidden');
-    removeBtn.classList.add('hidden');
+    defaultAvatar.style.display = 'flex';
 }
 
 // 誕生日から年齢を自動計算する関数

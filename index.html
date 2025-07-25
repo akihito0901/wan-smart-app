@@ -131,12 +131,19 @@
                 <div class="content">
                     <div class="profile-section">
                         <div class="avatar-upload-section">
-                            <div id="user-avatar" class="profile-avatar">
+                            <div id="user-avatar" class="profile-avatar" role="button" tabindex="0">
                                 <img id="avatar-image" src="" alt="プロフィール画像" style="display: none;">
-                                <div id="default-avatar" class="default-avatar">🐕</div>
+                                <div id="default-avatar" class="default-avatar">
+                                    <div class="add-photo-icon">+</div>
+                                </div>
                                 <input type="file" id="avatar-input" accept="image/*" style="display: none;">
-                                <div id="add-photo-btn" class="add-photo-btn">+</div>
-                                <div id="remove-photo-btn" class="remove-photo-btn hidden">×</div>
+                                <div id="photo-overlay" class="photo-overlay hidden">
+                                    <div class="overlay-content">
+                                        <button id="change-photo-btn" class="overlay-btn">写真を変更</button>
+                                        <button id="remove-photo-btn" class="overlay-btn remove">削除</button>
+                                        <button id="cancel-btn" class="overlay-btn cancel">キャンセル</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <h3 id="user-name">ユーザー名</h3>
