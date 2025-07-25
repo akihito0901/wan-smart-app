@@ -11,6 +11,7 @@
     <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js"></script>
 </head>
 <body>
@@ -128,7 +129,17 @@
             <div id="profile-tab" class="tab-content">
                 <div class="content">
                     <div class="profile-section">
-                        <div id="user-avatar" class="profile-avatar">👤</div>
+                        <div class="avatar-upload-section">
+                            <div id="user-avatar" class="profile-avatar">
+                                <img id="avatar-image" src="" alt="プロフィール画像" style="display: none;">
+                                <div id="default-avatar" class="default-avatar">🐕</div>
+                            </div>
+                            <div class="avatar-upload-controls">
+                                <input type="file" id="avatar-input" accept="image/*" style="display: none;">
+                                <button id="upload-avatar-btn" class="upload-btn">📷 写真を選択</button>
+                                <button id="remove-avatar-btn" class="remove-btn hidden">🗑️ 削除</button>
+                            </div>
+                        </div>
                         <h3 id="user-name">ユーザー名</h3>
                         
                         <div class="profile-form">

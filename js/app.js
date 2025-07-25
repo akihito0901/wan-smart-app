@@ -2,6 +2,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, signInWithCredential, GoogleAuthProvider, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
 
 // Firebase設定
@@ -19,6 +20,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 const analytics = getAnalytics(app);
 
 // グローバル変数
@@ -78,6 +80,13 @@ function setupEventListeners() {
     document.getElementById('filter-all').addEventListener('click', () => loadWalkHistory('all'));
     document.getElementById('filter-week').addEventListener('click', () => loadWalkHistory('week'));
     document.getElementById('filter-month').addEventListener('click', () => loadWalkHistory('month'));
+    
+    // プロフィール画像アップロード
+    document.getElementById('upload-avatar-btn').addEventListener('click', () => {
+        document.getElementById('avatar-input').click();
+    });
+    document.getElementById('avatar-input').addEventListener('change', handleAvatarUpload);
+    document.getElementById('remove-avatar-btn').addEventListener('click', removeAvatar);
 }
 
 // Googleログイン処理
@@ -121,9 +130,15 @@ function showMainApp() {
     if (currentUser) {
         console.log('ユーザー情報を画面に表示:', currentUser.displayName);
         document.getElementById('user-name').textContent = currentUser.displayName || 'ユーザー';
-        if (currentUser.photoURL) {
-            document.getElementById('user-avatar').innerHTML = `<img src="${currentUser.photoURL}" alt="アバター" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
-        }
+        
+        // プロフィール画像の表示（保存された画像またはGoogleアカウント画像）
+        loadUserProfile().then(() => {
+            // プロフィール読み込み完了後、Googleアカウント画像をフォールバックとして使用
+            const avatarImage = document.getElementById('avatar-image');
+            if (avatarImage.style.display === 'none' && currentUser.photoURL) {
+                displayAvatar(currentUser.photoURL);
+            }
+        });
     }
     
     // 位置情報取得とマップ初期化
@@ -404,6 +419,13 @@ async function loadUserProfile() {
             document.getElementById('dog-breed-select').value = data.dogBreed || '';
             document.getElementById('dog-age-input').value = data.dogAge || '';
             document.getElementById('dog-personality-input').value = data.dogPersonality || '';
+            
+            // プロフィール画像を表示
+            if (data.avatarURL) {
+                displayAvatar(data.avatarURL);
+            } else {
+                showDefaultAvatar();
+            }
             
             // 統計情報更新
             document.getElementById('total-walks').textContent = data.totalWalks || 0;
@@ -840,5 +862,99 @@ function formatTime(date) {
     return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
 
+// プロフィール画像関連の関数
+async function handleAvatarUpload(event) {
+    const file = event.target.files[0];
+    if (!file || !currentUser) return;
+    
+    // ファイルサイズチェック（5MB以下）
+    if (file.size > 5 * 1024 * 1024) {
+        alert('ファイルサイズは5MB以下にしてください');
+        return;
+    }
+    
+    // ファイルタイプチェック
+    if (!file.type.startsWith('image/')) {
+        alert('画像ファイルを選択してください');
+        return;
+    }
+    
+    try {
+        // ローディング表示
+        document.getElementById('upload-avatar-btn').textContent = '📤 アップロード中...';
+        document.getElementById('upload-avatar-btn').disabled = true;
+        
+        // Firebase Storageにアップロード
+        const avatarRef = ref(storage, `avatars/${currentUser.uid}/${Date.now()}_${file.name}`);
+        const snapshot = await uploadBytes(avatarRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        
+        // Firestoreにプロフィール画像URLを保存
+        const docRef = doc(db, 'users', currentUser.uid);
+        await setDoc(docRef, { avatarURL: downloadURL }, { merge: true });
+        
+        // 画像を表示
+        displayAvatar(downloadURL);
+        
+        alert('プロフィール画像を更新しました！');
+        
+    } catch (error) {
+        console.error('画像アップロードエラー:', error);
+        alert('画像のアップロードに失敗しました');
+    } finally {
+        // ボタンを元に戻す
+        document.getElementById('upload-avatar-btn').textContent = '📷 写真を選択';
+        document.getElementById('upload-avatar-btn').disabled = false;
+        // ファイル入力をリセット
+        event.target.value = '';
+    }
+}
+
+async function removeAvatar() {
+    if (!currentUser) return;
+    
+    try {
+        // Firestoreからアバター情報を削除
+        const docRef = doc(db, 'users', currentUser.uid);
+        await setDoc(docRef, { avatarURL: null }, { merge: true });
+        
+        // デフォルトアバターを表示
+        showDefaultAvatar();
+        
+        alert('プロフィール画像を削除しました');
+        
+    } catch (error) {
+        console.error('画像削除エラー:', error);
+        alert('画像の削除に失敗しました');
+    }
+}
+
+function displayAvatar(url) {
+    const avatarImage = document.getElementById('avatar-image');
+    const defaultAvatar = document.getElementById('default-avatar');
+    const removeBtn = document.getElementById('remove-avatar-btn');
+    
+    avatarImage.src = url;
+    avatarImage.style.display = 'block';
+    defaultAvatar.style.display = 'none';
+    removeBtn.classList.remove('hidden');
+}
+
+function showDefaultAvatar() {
+    const avatarImage = document.getElementById('avatar-image');
+    const defaultAvatar = document.getElementById('default-avatar');
+    const removeBtn = document.getElementById('remove-avatar-btn');
+    
+    avatarImage.style.display = 'none';
+    defaultAvatar.style.display = 'block';
+    removeBtn.classList.add('hidden');
+}
+
+// アプリ初期化時にデフォルトアバターを表示
+function initializeAvatar() {
+    showDefaultAvatar();
+}
+
 // アプリ初期化を実行
 initializeAppAuth();
+initializeAvatar();
