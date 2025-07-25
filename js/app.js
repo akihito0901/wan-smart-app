@@ -39,6 +39,7 @@ const logoutBtn = document.getElementById('logout-btn');
 document.addEventListener('DOMContentLoaded', function() {
     initializeAppAuth();
     setupEventListeners();
+    initializeAvatar();
 });
 
 // アプリ初期化
@@ -86,26 +87,50 @@ function setupEventListeners() {
     document.getElementById('filter-month').addEventListener('click', () => loadWalkHistory('month'));
     
     // プロフィール画像アップロード（インスタグラム風）
-    document.getElementById('user-avatar').addEventListener('click', handleAvatarClick);
-    document.getElementById('avatar-input').addEventListener('change', handleAvatarUpload);
+    const userAvatar = document.getElementById('user-avatar');
+    const avatarInput = document.getElementById('avatar-input');
+    if (userAvatar && avatarInput) {
+        userAvatar.addEventListener('click', handleAvatarClick);
+        avatarInput.addEventListener('change', handleAvatarUpload);
+    } else {
+        console.error('Avatar elements not found during setup');
+    }
     
     // オーバーレイボタン
-    document.getElementById('change-photo-btn').addEventListener('click', () => {
-        hidePhotoOverlay();
-        document.getElementById('avatar-input').click();
-    });
-    document.getElementById('remove-photo-btn').addEventListener('click', () => {
-        hidePhotoOverlay();
-        removeAvatar();
-    });
-    document.getElementById('cancel-btn').addEventListener('click', hidePhotoOverlay);
+    const changePhotoBtn = document.getElementById('change-photo-btn');
+    const removePhotoBtn = document.getElementById('remove-photo-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const photoOverlay = document.getElementById('photo-overlay');
+    
+    if (changePhotoBtn) {
+        changePhotoBtn.addEventListener('click', () => {
+            hidePhotoOverlay();
+            const avatarInput = document.getElementById('avatar-input');
+            if (avatarInput) {
+                avatarInput.click();
+            }
+        });
+    }
+    
+    if (removePhotoBtn) {
+        removePhotoBtn.addEventListener('click', () => {
+            hidePhotoOverlay();
+            removeAvatar();
+        });
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', hidePhotoOverlay);
+    }
     
     // オーバーレイの背景クリックで閉じる
-    document.getElementById('photo-overlay').addEventListener('click', (e) => {
-        if (e.target.id === 'photo-overlay') {
-            hidePhotoOverlay();
-        }
-    });
+    if (photoOverlay) {
+        photoOverlay.addEventListener('click', (e) => {
+            if (e.target.id === 'photo-overlay') {
+                hidePhotoOverlay();
+            }
+        });
+    }
 }
 
 // Googleログイン処理
@@ -914,13 +939,12 @@ function formatTime(date) {
 // プロフィール画像関連の関数（Base64版 - 無料）
 async function handleAvatarUpload(event) {
     const file = event.target.files[0];
-    if (!file || !currentUser) return;
-    
-    // ファイルサイズチェック（500KB以下に制限）
-    if (file.size > 500 * 1024) {
-        alert('ファイルサイズは500KB以下にしてください（Firestoreの制限のため）');
+    if (!file || !currentUser) {
+        console.log('No file selected or user not authenticated');
         return;
     }
+    
+    console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
     
     // ファイルタイプチェック
     if (!file.type.startsWith('image/')) {
@@ -928,14 +952,29 @@ async function handleAvatarUpload(event) {
         return;
     }
     
+    // より大きなファイルサイズを許可（2MB以下）
+    if (file.size > 2 * 1024 * 1024) {
+        alert('ファイルサイズは2MB以下にしてください');
+        return;
+    }
+    
     try {
         // ローディング表示（プロフィール画像全体をローディング状態に）
         const avatar = document.getElementById('user-avatar');
-        avatar.style.opacity = '0.6';
-        avatar.style.pointerEvents = 'none';
+        if (avatar) {
+            avatar.style.opacity = '0.6';
+            avatar.style.pointerEvents = 'none';
+        }
+        
+        console.log('Starting image processing...');
+        
+        // 画像を圧縮してからBase64に変換
+        const compressedFile = await compressImage(file, 0.7, 400, 400); // 70% quality, max 400x400px
+        console.log('Compressed file size:', compressedFile.size);
         
         // ファイルをBase64に変換
-        const base64String = await convertToBase64(file);
+        const base64String = await convertToBase64(compressedFile);
+        console.log('Base64 string length:', base64String.length);
         
         // Firestoreにプロフィール画像（Base64）を保存
         const docRef = doc(db, 'users', currentUser.uid);
@@ -944,6 +983,8 @@ async function handleAvatarUpload(event) {
             avatarURL: null // Storageは使わないのでクリア
         }, { merge: true });
         
+        console.log('Image saved to Firestore successfully');
+        
         // 画像を表示
         displayAvatar(base64String);
         
@@ -951,15 +992,55 @@ async function handleAvatarUpload(event) {
         
     } catch (error) {
         console.error('画像処理エラー:', error);
-        alert('画像の処理に失敗しました');
+        alert('画像の処理に失敗しました: ' + error.message);
     } finally {
         // ローディング状態を元に戻す
         const avatar = document.getElementById('user-avatar');
-        avatar.style.opacity = '1';
-        avatar.style.pointerEvents = 'auto';
+        if (avatar) {
+            avatar.style.opacity = '1';
+            avatar.style.pointerEvents = 'auto';
+        }
         // ファイル入力をリセット
         event.target.value = '';
     }
+}
+
+// 画像を圧縮する関数
+function compressImage(file, quality = 0.7, maxWidth = 400, maxHeight = 400) {
+    return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        img.onload = function() {
+            // アスペクト比を保持してリサイズ
+            let { width, height } = img;
+            
+            if (width > height) {
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width = (width * maxHeight) / height;
+                    height = maxHeight;
+                }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // 画像を描画
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Blobとして出力
+            canvas.toBlob(resolve, file.type, quality);
+        };
+        
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+    });
 }
 
 // ファイルをBase64に変換する関数
@@ -997,16 +1078,28 @@ async function removeAvatar() {
 // インスタグラム風のアバタークリック処理
 function handleAvatarClick() {
     const avatarImage = document.getElementById('avatar-image');
-    // より確実な写真有無の判定
-    const hasPhoto = avatarImage.style.display === 'block' || 
-                    (avatarImage.src && avatarImage.src !== '' && avatarImage.src !== window.location.href);
+    const defaultAvatar = document.getElementById('default-avatar');
     
-    if (hasPhoto) {
-        // 写真がある場合はオーバーレイを表示
-        showPhotoOverlay();
+    if (!avatarImage || !defaultAvatar) {
+        console.error('Avatar elements not found');
+        return;
+    }
+    
+    // シンプルで確実な写真有無の判定
+    const hasPhoto = avatarImage.style.display === 'block' && 
+                    avatarImage.src && 
+                    avatarImage.src.length > 0 &&
+                    !avatarImage.src.endsWith('index.html');
+    
+    console.log('Avatar click detected, hasPhoto:', hasPhoto, 'src:', avatarImage.src);
+    
+    // 暫定的にすべてのクリックでファイル選択ダイアログを開く（デバッグ用）
+    const fileInput = document.getElementById('avatar-input');
+    if (fileInput) {
+        console.log('Opening file dialog');
+        fileInput.click();
     } else {
-        // 写真がない場合は直接ファイル選択
-        document.getElementById('avatar-input').click();
+        console.error('File input not found');
     }
 }
 
@@ -1044,6 +1137,12 @@ function displayAvatar(url) {
     const avatarImage = document.getElementById('avatar-image');
     const defaultAvatar = document.getElementById('default-avatar');
     
+    if (!avatarImage || !defaultAvatar) {
+        console.error('Avatar display elements not found');
+        return;
+    }
+    
+    console.log('Displaying avatar with URL:', url);
     avatarImage.src = url;
     avatarImage.style.display = 'block';
     defaultAvatar.style.display = 'none';
@@ -1053,6 +1152,12 @@ function showDefaultAvatar() {
     const avatarImage = document.getElementById('avatar-image');
     const defaultAvatar = document.getElementById('default-avatar');
     
+    if (!avatarImage || !defaultAvatar) {
+        console.error('Avatar display elements not found');
+        return;
+    }
+    
+    console.log('Showing default avatar');
     avatarImage.style.display = 'none';
     defaultAvatar.style.display = 'flex';
 }
@@ -1090,6 +1195,42 @@ function calculateAge() {
 function initializeAvatar() {
     showDefaultAvatar();
 }
+
+// デバッグ用関数（コンソールから呼び出し可能）
+window.debugPhotoUpload = function() {
+    console.log('=== Photo Upload Debug ===');
+    const userAvatar = document.getElementById('user-avatar');
+    const avatarInput = document.getElementById('avatar-input');
+    const avatarImage = document.getElementById('avatar-image');
+    const defaultAvatar = document.getElementById('default-avatar');
+    
+    console.log('Elements found:');
+    console.log('- userAvatar:', !!userAvatar);
+    console.log('- avatarInput:', !!avatarInput);
+    console.log('- avatarImage:', !!avatarImage);
+    console.log('- defaultAvatar:', !!defaultAvatar);
+    
+    if (avatarImage) {
+        console.log('Avatar image display:', avatarImage.style.display);
+        console.log('Avatar image src:', avatarImage.src);
+    }
+    
+    if (avatarInput) {
+        console.log('File input accepts:', avatarInput.accept);
+        console.log('Event listeners attached to input:', getEventListeners ? getEventListeners(avatarInput) : 'Cannot check');
+    }
+};
+
+// 強制的にファイル選択ダイアログを開く関数
+window.forceFileDialog = function() {
+    const avatarInput = document.getElementById('avatar-input');
+    if (avatarInput) {
+        avatarInput.click();
+        console.log('File dialog opened');
+    } else {
+        console.error('Avatar input not found');
+    }
+};
 
 // アプリ初期化を実行（DOMContentLoadedで既に実行されるため削除）
 // initializeAppAuth(); // 重複削除
