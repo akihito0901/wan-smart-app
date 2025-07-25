@@ -175,7 +175,7 @@ function switchTab(tabName) {
     document.getElementById(`${tabName}-tab`).classList.add('active');
     
     // マップタブの場合、マップを再初期化
-    if (tabName === 'map' && map) {
+    if (tabName === 'map' && map && typeof google !== 'undefined' && google.maps) {
         setTimeout(() => {
             google.maps.event.trigger(map, 'resize');
             if (userLocation) {
@@ -220,7 +220,10 @@ function getCurrentLocation() {
 
 // Googleマップ初期化
 window.initMap = function() {
-    if (!userLocation) return;
+    if (!userLocation || typeof google === 'undefined' || !google.maps) {
+        console.log('Google Maps API not loaded or user location not available');
+        return;
+    }
     
     const mapOptions = {
         zoom: 15,
@@ -266,7 +269,7 @@ window.initMap = function() {
 
 // サンプル散歩コース追加
 function addSampleWalkingRoutes() {
-    if (!map || !userLocation) return;
+    if (!map || !userLocation || typeof google === 'undefined' || !google.maps) return;
     
     const walkingPaths = [
         {
@@ -316,7 +319,7 @@ function addSampleWalkingRoutes() {
 
 // 公園マーカー追加
 function addParkMarkers() {
-    if (!map || !userLocation) return;
+    if (!map || !userLocation || typeof google === 'undefined' || !google.maps) return;
     
     const parks = [
         {
@@ -470,13 +473,27 @@ async function loadUserProfile() {
 async function saveProfile() {
     if (!currentUser) return;
     
+    // 基本的なバリデーション
+    const userName = document.getElementById('user-name-input').value.trim();
+    const dogName = document.getElementById('dog-name-input').value.trim();
+    
+    if (!userName) {
+        alert('お名前を入力してください');
+        return;
+    }
+    
+    if (!dogName) {
+        alert('愛犬の名前を入力してください');
+        return;
+    }
+    
     const profileData = {
-        userName: document.getElementById('user-name-input').value,
-        dogName: document.getElementById('dog-name-input').value,
+        userName: userName,
+        dogName: dogName,
         dogBreed: document.getElementById('dog-breed-select').value,
         dogBirthday: document.getElementById('dog-birthday-input').value,
         dogGender: document.getElementById('dog-gender-select').value,
-        dogPersonality: document.getElementById('dog-personality-input').value,
+        dogPersonality: document.getElementById('dog-personality-input').value.trim(),
         email: currentUser.email,
         photoURL: currentUser.photoURL,
         updatedAt: serverTimestamp()
@@ -578,12 +595,13 @@ async function endWalk() {
         // 散歩統計表示を停止
         stopWalkStatsDisplay();
         
+        // ログを記録（walkDataをnullにする前に）
+        console.log('散歩完了:', { distance: walkData.distance, duration });
+        
         // 結果を表示
         alert(`散歩完了！\n\n📏 距離: ${walkData.distance.toFixed(2)}km\n⏰ 時間: ${duration}分\n\nお疲れさまでした！🐕`);
         
         walkData = null;
-        
-        console.log('散歩完了:', { distance: walkData?.distance, duration });
     } catch (error) {
         console.error('散歩終了エラー:', error);
         alert('散歩記録の保存に失敗しました');
@@ -979,7 +997,9 @@ async function removeAvatar() {
 // インスタグラム風のアバタークリック処理
 function handleAvatarClick() {
     const avatarImage = document.getElementById('avatar-image');
-    const hasPhoto = avatarImage.style.display === 'block';
+    // より確実な写真有無の判定
+    const hasPhoto = avatarImage.style.display === 'block' || 
+                    (avatarImage.src && avatarImage.src !== '' && avatarImage.src !== window.location.href);
     
     if (hasPhoto) {
         // 写真がある場合はオーバーレイを表示
@@ -990,17 +1010,27 @@ function handleAvatarClick() {
     }
 }
 
+// グローバルな ESC キーハンドラーの参照を保持
+let escKeyHandler = null;
+
 // フォトオーバーレイを表示
 function showPhotoOverlay() {
     document.getElementById('photo-overlay').classList.remove('hidden');
-    // ESCキーでも閉じられるように
-    document.addEventListener('keydown', handleEscKey);
+    // ESCキーでも閉じられるように（前回のハンドラーがあれば削除）
+    if (escKeyHandler) {
+        document.removeEventListener('keydown', escKeyHandler);
+    }
+    escKeyHandler = handleEscKey;
+    document.addEventListener('keydown', escKeyHandler);
 }
 
 // フォトオーバーレイを隠す
 function hidePhotoOverlay() {
     document.getElementById('photo-overlay').classList.add('hidden');
-    document.removeEventListener('keydown', handleEscKey);
+    if (escKeyHandler) {
+        document.removeEventListener('keydown', escKeyHandler);
+        escKeyHandler = null;
+    }
 }
 
 // ESCキーでオーバーレイを閉じる
@@ -1061,6 +1091,6 @@ function initializeAvatar() {
     showDefaultAvatar();
 }
 
-// アプリ初期化を実行
-initializeAppAuth();
-initializeAvatar();
+// アプリ初期化を実行（DOMContentLoadedで既に実行されるため削除）
+// initializeAppAuth(); // 重複削除
+// initializeAvatar(); // 重複削除
