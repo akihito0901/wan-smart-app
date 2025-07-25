@@ -1,0 +1,9 @@
+node_modules
+.next
+.vercel
+src/
+public/
+package.json
+package-lock.json
+next.config.*
+tsconfig.json
