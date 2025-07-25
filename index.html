@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>わんスマート - 犬の散歩・ソーシャルアプリ</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBu63l8Orqplq2EnLTkigilHQBeBpVvXLc&callback=initMap"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- ログイン画面 -->
+        <div id="login-screen" class="screen">
+            <div class="login-container">
+                <div class="logo-section">
+                    <div class="logo">🐕 わんスマート</div>
+                    <p class="tagline">愛犬と一緒に楽しい散歩を</p>
+                </div>
+                
+                <div class="login-buttons">
+                    <div id="g_id_onload"
+                         data-client_id="633353535199-xxxxxxxxxx.apps.googleusercontent.com"
+                         data-context="signin"
+                         data-ux_mode="popup"
+                         data-callback="handleCredentialResponse"
+                         data-auto_prompt="false">
+                    </div>
+                    
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-shape="rectangular"
+                         data-theme="outline"
+                         data-text="signin_with"
+                         data-size="large"
+                         data-logo_alignment="left">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- メインアプリ画面 -->
+        <div id="main-app" class="screen hidden">
+            <header>
+                <div class="header-content">
+                    <div class="logo">🐕 わんスマート</div>
+                    <button id="logout-btn" class="logout-btn">ログアウト</button>
+                </div>
+            </header>
+            
+            <nav class="nav-tabs">
+                <button class="tab active" data-tab="map">マップ</button>
+                <button class="tab" data-tab="profile">プロフィール</button>
+                <button class="tab" data-tab="friends">友達</button>
+            </nav>
+            
+            <!-- マップタブ -->
+            <div id="map-tab" class="tab-content active">
+                <div class="content">
+                    <div id="map" class="map-container"></div>
+                    
+                    <div class="nearby-section">
+                        <h3>近くの犬友達</h3>
+                        <div id="nearby-dogs" class="dog-list">
+                            <!-- 動的にデータが追加されます -->
+                        </div>
+                    </div>
+                    
+                    <button id="start-walk-btn" class="walk-button">散歩を始める 🚶‍♂️</button>
+                </div>
+            </div>
+            
+            <!-- プロフィールタブ -->
+            <div id="profile-tab" class="tab-content">
+                <div class="content">
+                    <div class="profile-section">
+                        <div id="user-avatar" class="profile-avatar">👤</div>
+                        <h3 id="user-name">ユーザー名</h3>
+                        
+                        <div class="profile-form">
+                            <div class="form-group">
+                                <label>お名前</label>
+                                <input type="text" id="user-name-input" placeholder="お名前を入力">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>愛犬の名前</label>
+                                <input type="text" id="dog-name-input" placeholder="愛犬の名前を入力">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>犬種</label>
+                                <select id="dog-breed-select">
+                                    <option value="">犬種を選択</option>
+                                    <option value="柴犬">柴犬</option>
+                                    <option value="トイプードル">トイプードル</option>
+                                    <option value="チワワ">チワワ</option>
+                                    <option value="ゴールデンレトリバー">ゴールデンレトリバー</option>
+                                    <option value="ラブラドール">ラブラドール</option>
+                                    <option value="フレンチブルドッグ">フレンチブルドッグ</option>
+                                    <option value="その他">その他</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>年齢</label>
+                                <input type="number" id="dog-age-input" placeholder="愛犬の年齢" min="0" max="30">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>性格・特徴</label>
+                                <textarea id="dog-personality-input" placeholder="愛犬の性格や特徴を教えてください"></textarea>
+                            </div>
+                            
+                            <button id="save-profile-btn" class="save-btn">プロフィールを保存</button>
+                        </div>
+                        
+                        <div class="stats-section">
+                            <h4>散歩記録</h4>
+                            <div class="stats">
+                                <div class="stat-item">
+                                    <span class="stat-number" id="total-walks">0</span>
+                                    <span class="stat-label">総散歩回数</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number" id="friends-count">0</span>
+                                    <span class="stat-label">友達</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 友達タブ -->
+            <div id="friends-tab" class="tab-content">
+                <div class="content">
+                    <h3>友達リスト</h3>
+                    <div id="friends-list" class="dog-list">
+                        <!-- 動的にデータが追加されます -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
