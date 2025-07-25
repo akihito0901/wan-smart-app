@@ -2,7 +2,8 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, signInWithCredential, GoogleAuthProvider, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+// Firebase Storage は Base64 を使用するため不要
+// import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
 
 // Firebase設定
@@ -20,7 +21,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
+// const storage = getStorage(app); // Base64使用により不要
 const analytics = getAnalytics(app);
 
 // グローバル変数
@@ -420,8 +421,10 @@ async function loadUserProfile() {
             document.getElementById('dog-age-input').value = data.dogAge || '';
             document.getElementById('dog-personality-input').value = data.dogPersonality || '';
             
-            // プロフィール画像を表示
-            if (data.avatarURL) {
+            // プロフィール画像を表示（Base64優先、URLはフォールバック）
+            if (data.avatarBase64) {
+                displayAvatar(data.avatarBase64);
+            } else if (data.avatarURL) {
                 displayAvatar(data.avatarURL);
             } else {
                 showDefaultAvatar();
@@ -862,14 +865,14 @@ function formatTime(date) {
     return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
 
-// プロフィール画像関連の関数
+// プロフィール画像関連の関数（Base64版 - 無料）
 async function handleAvatarUpload(event) {
     const file = event.target.files[0];
     if (!file || !currentUser) return;
     
-    // ファイルサイズチェック（5MB以下）
-    if (file.size > 5 * 1024 * 1024) {
-        alert('ファイルサイズは5MB以下にしてください');
+    // ファイルサイズチェック（500KB以下に制限）
+    if (file.size > 500 * 1024) {
+        alert('ファイルサイズは500KB以下にしてください（Firestoreの制限のため）');
         return;
     }
     
@@ -881,26 +884,27 @@ async function handleAvatarUpload(event) {
     
     try {
         // ローディング表示
-        document.getElementById('upload-avatar-btn').textContent = '📤 アップロード中...';
+        document.getElementById('upload-avatar-btn').textContent = '📤 処理中...';
         document.getElementById('upload-avatar-btn').disabled = true;
         
-        // Firebase Storageにアップロード
-        const avatarRef = ref(storage, `avatars/${currentUser.uid}/${Date.now()}_${file.name}`);
-        const snapshot = await uploadBytes(avatarRef, file);
-        const downloadURL = await getDownloadURL(snapshot.ref);
+        // ファイルをBase64に変換
+        const base64String = await convertToBase64(file);
         
-        // Firestoreにプロフィール画像URLを保存
+        // Firestoreにプロフィール画像（Base64）を保存
         const docRef = doc(db, 'users', currentUser.uid);
-        await setDoc(docRef, { avatarURL: downloadURL }, { merge: true });
+        await setDoc(docRef, { 
+            avatarBase64: base64String,
+            avatarURL: null // Storageは使わないのでクリア
+        }, { merge: true });
         
         // 画像を表示
-        displayAvatar(downloadURL);
+        displayAvatar(base64String);
         
         alert('プロフィール画像を更新しました！');
         
     } catch (error) {
-        console.error('画像アップロードエラー:', error);
-        alert('画像のアップロードに失敗しました');
+        console.error('画像処理エラー:', error);
+        alert('画像の処理に失敗しました');
     } finally {
         // ボタンを元に戻す
         document.getElementById('upload-avatar-btn').textContent = '📷 写真を選択';
@@ -910,13 +914,26 @@ async function handleAvatarUpload(event) {
     }
 }
 
+// ファイルをBase64に変換する関数
+function convertToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
 async function removeAvatar() {
     if (!currentUser) return;
     
     try {
-        // Firestoreからアバター情報を削除
+        // FirestoreからBase64アバター情報を削除
         const docRef = doc(db, 'users', currentUser.uid);
-        await setDoc(docRef, { avatarURL: null }, { merge: true });
+        await setDoc(docRef, { 
+            avatarBase64: null,
+            avatarURL: null // 古いデータもクリア
+        }, { merge: true });
         
         // デフォルトアバターを表示
         showDefaultAvatar();
