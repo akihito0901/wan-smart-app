@@ -86,11 +86,11 @@ function setupEventListeners() {
     document.getElementById('filter-month').addEventListener('click', () => loadWalkHistory('month'));
     
     // プロフィール画像アップロード
-    document.getElementById('upload-avatar-btn').addEventListener('click', () => {
+    document.getElementById('add-photo-btn').addEventListener('click', () => {
         document.getElementById('avatar-input').click();
     });
     document.getElementById('avatar-input').addEventListener('change', handleAvatarUpload);
-    document.getElementById('remove-avatar-btn').addEventListener('click', removeAvatar);
+    document.getElementById('remove-photo-btn').addEventListener('click', removeAvatar);
 }
 
 // Googleログイン処理
@@ -897,8 +897,9 @@ async function handleAvatarUpload(event) {
     
     try {
         // ローディング表示
-        document.getElementById('upload-avatar-btn').textContent = '📤 処理中...';
-        document.getElementById('upload-avatar-btn').disabled = true;
+        const addBtn = document.getElementById('add-photo-btn');
+        addBtn.textContent = '⏳';
+        addBtn.style.pointerEvents = 'none';
         
         // ファイルをBase64に変換
         const base64String = await convertToBase64(file);
@@ -920,8 +921,9 @@ async function handleAvatarUpload(event) {
         alert('画像の処理に失敗しました');
     } finally {
         // ボタンを元に戻す
-        document.getElementById('upload-avatar-btn').textContent = '📷 写真を選択';
-        document.getElementById('upload-avatar-btn').disabled = false;
+        const addBtn = document.getElementById('add-photo-btn');
+        addBtn.textContent = '+';
+        addBtn.style.pointerEvents = 'auto';
         // ファイル入力をリセット
         event.target.value = '';
     }
@@ -962,21 +964,25 @@ async function removeAvatar() {
 function displayAvatar(url) {
     const avatarImage = document.getElementById('avatar-image');
     const defaultAvatar = document.getElementById('default-avatar');
-    const removeBtn = document.getElementById('remove-avatar-btn');
+    const addBtn = document.getElementById('add-photo-btn');
+    const removeBtn = document.getElementById('remove-photo-btn');
     
     avatarImage.src = url;
     avatarImage.style.display = 'block';
     defaultAvatar.style.display = 'none';
+    addBtn.classList.add('hidden');
     removeBtn.classList.remove('hidden');
 }
 
 function showDefaultAvatar() {
     const avatarImage = document.getElementById('avatar-image');
     const defaultAvatar = document.getElementById('default-avatar');
-    const removeBtn = document.getElementById('remove-avatar-btn');
+    const addBtn = document.getElementById('add-photo-btn');
+    const removeBtn = document.getElementById('remove-photo-btn');
     
     avatarImage.style.display = 'none';
     defaultAvatar.style.display = 'block';
+    addBtn.classList.remove('hidden');
     removeBtn.classList.add('hidden');
 }
 
