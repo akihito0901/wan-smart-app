@@ -73,6 +73,9 @@ function setupEventListeners() {
 
     // プロフィール保存
     document.getElementById('save-profile-btn').addEventListener('click', saveProfile);
+    
+    // 誕生日変更時の年齢自動計算
+    document.getElementById('dog-birthday-input').addEventListener('change', calculateAge);
 
     // 散歩開始
     document.getElementById('start-walk-btn').addEventListener('click', startWalk);
@@ -419,8 +422,13 @@ async function loadUserProfile() {
             document.getElementById('dog-name-input').value = data.dogName || '';
             document.getElementById('dog-breed-select').value = data.dogBreed || '';
             document.getElementById('dog-birthday-input').value = data.dogBirthday || '';
-            document.getElementById('dog-age-input').value = data.dogAge || '';
+            document.getElementById('dog-gender-select').value = data.dogGender || '';
             document.getElementById('dog-personality-input').value = data.dogPersonality || '';
+            
+            // 誕生日が設定されている場合は年齢を自動計算
+            if (data.dogBirthday) {
+                calculateAge();
+            }
             
             // プロフィール画像を表示（Base64優先、URLはフォールバック）
             if (data.avatarBase64) {
@@ -449,7 +457,7 @@ async function saveProfile() {
         dogName: document.getElementById('dog-name-input').value,
         dogBreed: document.getElementById('dog-breed-select').value,
         dogBirthday: document.getElementById('dog-birthday-input').value,
-        dogAge: parseInt(document.getElementById('dog-age-input').value) || 0,
+        dogGender: document.getElementById('dog-gender-select').value,
         dogPersonality: document.getElementById('dog-personality-input').value,
         email: currentUser.email,
         photoURL: currentUser.photoURL,
@@ -967,6 +975,35 @@ function showDefaultAvatar() {
     avatarImage.style.display = 'none';
     defaultAvatar.style.display = 'block';
     removeBtn.classList.add('hidden');
+}
+
+// 誕生日から年齢を自動計算する関数
+function calculateAge() {
+    const birthdayInput = document.getElementById('dog-birthday-input');
+    const ageDisplay = document.getElementById('dog-age-display');
+    
+    if (!birthdayInput.value) {
+        ageDisplay.value = '';
+        return;
+    }
+    
+    const birthday = new Date(birthdayInput.value);
+    const today = new Date();
+    
+    let age = today.getFullYear() - birthday.getFullYear();
+    const monthDiff = today.getMonth() - birthday.getMonth();
+    
+    // まだ誕生日が来ていない場合は1歳引く
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthday.getDate())) {
+        age--;
+    }
+    
+    // 年齢が負の場合は0にする
+    if (age < 0) {
+        age = 0;
+    }
+    
+    ageDisplay.value = `${age}歳`;
 }
 
 // アプリ初期化時にデフォルトアバターを表示

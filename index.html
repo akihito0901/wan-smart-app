@@ -190,12 +190,22 @@
                             
                             <div class="form-group">
                                 <label>誕生日</label>
-                                <input type="date" id="dog-birthday-input">
+                                <input type="date" id="dog-birthday-input" min="1990-01-01" max="2030-12-31">
                             </div>
                             
                             <div class="form-group">
                                 <label>年齢</label>
-                                <input type="number" id="dog-age-input" placeholder="愛犬の年齢" min="0" max="30">
+                                <input type="text" id="dog-age-display" placeholder="誕生日から自動計算されます" readonly style="background: #f8f9fa; color: #666;">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>性別</label>
+                                <select id="dog-gender-select">
+                                    <option value="">性別を選択</option>
+                                    <option value="オス">オス（♂）</option>
+                                    <option value="メス">メス（♀）</option>
+                                    <option value="未確認">未確認</option>
+                                </select>
                             </div>
                             
                             <div class="form-group">
