@@ -186,6 +186,47 @@ header {
     color: #666;
 }
 
+/* 散歩統計 */
+.walk-stats {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    text-align: center;
+    border: 2px solid #28a745;
+}
+
+.walk-stats h4 {
+    margin-bottom: 15px;
+    color: #28a745;
+    font-size: 18px;
+}
+
+.walk-stats .stats {
+    display: flex;
+    justify-content: space-around;
+    gap: 20px;
+}
+
+.walk-stats .stat-item {
+    text-align: center;
+    flex: 1;
+}
+
+.walk-stats .stat-number {
+    display: block;
+    font-size: 28px;
+    font-weight: bold;
+    color: #28a745;
+    margin-bottom: 5px;
+}
+
+.walk-stats .stat-label {
+    font-size: 14px;
+    color: #666;
+    font-weight: normal;
+}
+
 /* 散歩ボタン */
 .walk-button {
     background: linear-gradient(135deg, #28a745, #20c997);

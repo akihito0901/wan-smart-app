@@ -25,6 +25,7 @@ const analytics = getAnalytics(app);
 let currentUser = null;
 let map = null;
 let userLocation = null;
+let walkData = null; // 散歩中のデータ
 
 // DOM要素
 const loginScreen = document.getElementById('login-screen');
@@ -435,24 +436,181 @@ async function saveProfile() {
 async function startWalk() {
     if (!currentUser) return;
     
+    if (walkData && walkData.status === 'active') {
+        // 散歩中の場合は終了処理
+        await endWalk();
+        return;
+    }
+    
     // 散歩記録をFirestoreに保存
-    const walkData = {
+    walkData = {
         userId: currentUser.uid,
-        startTime: serverTimestamp(),
-        location: userLocation,
-        status: 'active'
+        startTime: new Date(),
+        startLocation: userLocation,
+        status: 'active',
+        distance: 0,
+        path: [userLocation], // 散歩ルートを記録
+        lastLocation: userLocation
     };
     
     try {
-        const docRef = await addDoc(collection(db, 'walks'), walkData);
+        const docRef = await addDoc(collection(db, 'walks'), {
+            userId: currentUser.uid,
+            startTime: serverTimestamp(),
+            startLocation: userLocation,
+            status: 'active'
+        });
+        walkData.docId = docRef.id;
+        
+        // ボタンのテキストを変更
+        document.getElementById('start-walk-btn').textContent = '散歩を終了 ⏰';
+        document.getElementById('start-walk-btn').style.background = 'linear-gradient(135deg, #dc3545, #c82333)';
+        
         alert('散歩を開始しました！楽しい散歩をお楽しみください 🐕');
         console.log('散歩記録ID:', docRef.id);
+        
+        // 位置情報の定期追跡を開始
+        startLocationTracking();
+        
+        // 散歩統計表示を開始
+        startWalkStatsDisplay();
         
         // 散歩回数を更新
         updateWalkCount();
     } catch (error) {
         console.error('散歩開始エラー:', error);
         alert('散歩の記録に失敗しました');
+    }
+}
+
+// 散歩終了
+async function endWalk() {
+    if (!walkData || walkData.status !== 'active') return;
+    
+    walkData.endTime = new Date();
+    walkData.status = 'completed';
+    
+    // 散歩時間を計算（分）
+    const duration = Math.round((walkData.endTime - walkData.startTime) / 1000 / 60);
+    
+    try {
+        // Firestoreに最終データを保存
+        const docRef = doc(db, 'walks', walkData.docId);
+        await setDoc(docRef, {
+            endTime: serverTimestamp(),
+            endLocation: userLocation,
+            status: 'completed',
+            distance: Math.round(walkData.distance * 100) / 100, // 小数点2桁
+            duration: duration,
+            path: walkData.path
+        }, { merge: true });
+        
+        // ボタンを元に戻す
+        document.getElementById('start-walk-btn').textContent = '散歩を始める 🚶‍♂️';
+        document.getElementById('start-walk-btn').style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+        
+        // 位置情報追跡を停止
+        stopLocationTracking();
+        
+        // 散歩統計表示を停止
+        stopWalkStatsDisplay();
+        
+        // 結果を表示
+        alert(`散歩完了！\n\n📏 距離: ${walkData.distance.toFixed(2)}km\n⏰ 時間: ${duration}分\n\nお疲れさまでした！🐕`);
+        
+        walkData = null;
+        
+        console.log('散歩完了:', { distance: walkData?.distance, duration });
+    } catch (error) {
+        console.error('散歩終了エラー:', error);
+        alert('散歩記録の保存に失敗しました');
+    }
+}
+
+// 位置情報追跡開始
+let locationWatchId = null;
+
+function startLocationTracking() {
+    if (!navigator.geolocation) return;
+    
+    locationWatchId = navigator.geolocation.watchPosition(
+        (position) => {
+            const newLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            
+            if (walkData && walkData.status === 'active') {
+                // 前回の位置からの距離を計算
+                const distance = calculateDistance(walkData.lastLocation, newLocation);
+                walkData.distance += distance;
+                walkData.path.push(newLocation);
+                walkData.lastLocation = newLocation;
+                
+                console.log(`散歩中: ${walkData.distance.toFixed(2)}km`);
+            }
+            
+            userLocation = newLocation;
+        },
+        (error) => {
+            console.error('位置情報追跡エラー:', error);
+        },
+        {
+            enableHighAccuracy: true,
+            maximumAge: 30000,
+            timeout: 27000
+        }
+    );
+}
+
+// 位置情報追跡停止
+function stopLocationTracking() {
+    if (locationWatchId !== null) {
+        navigator.geolocation.clearWatch(locationWatchId);
+        locationWatchId = null;
+    }
+}
+
+// 2点間の距離を計算（km）
+function calculateDistance(pos1, pos2) {
+    const R = 6371; // 地球の半径（km）
+    const dLat = (pos2.lat - pos1.lat) * Math.PI / 180;
+    const dLng = (pos2.lng - pos1.lng) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(pos1.lat * Math.PI / 180) * Math.cos(pos2.lat * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+// 散歩統計のリアルタイム表示
+let walkStatsInterval = null;
+
+function startWalkStatsDisplay() {
+    // 散歩統計エリアを表示
+    document.getElementById('walk-stats').classList.remove('hidden');
+    
+    // 1秒ごとに統計を更新
+    walkStatsInterval = setInterval(() => {
+        if (walkData && walkData.status === 'active') {
+            // 経過時間を計算（分）
+            const duration = Math.round((new Date() - walkData.startTime) / 1000 / 60);
+            
+            // 画面に表示
+            document.getElementById('current-distance').textContent = walkData.distance.toFixed(2);
+            document.getElementById('current-duration').textContent = duration;
+        }
+    }, 1000);
+}
+
+function stopWalkStatsDisplay() {
+    // 散歩統計エリアを非表示
+    document.getElementById('walk-stats').classList.add('hidden');
+    
+    // 間隔タイマーを停止
+    if (walkStatsInterval) {
+        clearInterval(walkStatsInterval);
+        walkStatsInterval = null;
     }
 }
 
