@@ -33,7 +33,7 @@ const logoutBtn = document.getElementById('logout-btn');
 
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
+    initializeAppAuth();
     setupEventListeners();
 });
 
