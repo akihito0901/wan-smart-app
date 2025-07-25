@@ -418,6 +418,7 @@ async function loadUserProfile() {
             document.getElementById('user-name-input').value = data.userName || '';
             document.getElementById('dog-name-input').value = data.dogName || '';
             document.getElementById('dog-breed-select').value = data.dogBreed || '';
+            document.getElementById('dog-birthday-input').value = data.dogBirthday || '';
             document.getElementById('dog-age-input').value = data.dogAge || '';
             document.getElementById('dog-personality-input').value = data.dogPersonality || '';
             
@@ -447,6 +448,7 @@ async function saveProfile() {
         userName: document.getElementById('user-name-input').value,
         dogName: document.getElementById('dog-name-input').value,
         dogBreed: document.getElementById('dog-breed-select').value,
+        dogBirthday: document.getElementById('dog-birthday-input').value,
         dogAge: parseInt(document.getElementById('dog-age-input').value) || 0,
         dogPersonality: document.getElementById('dog-personality-input').value,
         email: currentUser.email,
