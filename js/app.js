@@ -39,14 +39,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // アプリ初期化
 function initializeAppAuth() {
+    console.log('認証状態監視を開始します');
     // 認証状態の監視
     onAuthStateChanged(auth, (user) => {
+        console.log('認証状態変更:', user ? 'ログイン中' : 'ログアウト中');
         if (user) {
+            console.log('ユーザー情報:', user.displayName, user.email);
             currentUser = user;
             showMainApp();
             loadUserProfile();
             loadFriends();
         } else {
+            console.log('ログアウト状態のため、ログイン画面を表示');
             showLoginScreen();
         }
     });
@@ -72,11 +76,13 @@ function setupEventListeners() {
 
 // Googleログイン処理
 window.handleCredentialResponse = function(response) {
+    console.log('Googleログイン開始:', response);
     const credential = GoogleAuthProvider.credential(response.credential);
     
     signInWithCredential(auth, credential)
         .then((result) => {
             console.log('ログイン成功:', result.user);
+            console.log('ユーザー情報:', result.user.displayName, result.user.email);
         })
         .catch((error) => {
             console.error('ログインエラー:', error);
@@ -95,16 +101,19 @@ function logout() {
 
 // 画面表示切り替え
 function showLoginScreen() {
+    console.log('ログイン画面を表示');
     loginScreen.classList.remove('hidden');
     mainApp.classList.add('hidden');
 }
 
 function showMainApp() {
+    console.log('メインアプリ画面を表示');
     loginScreen.classList.add('hidden');
     mainApp.classList.remove('hidden');
     
     // ユーザー情報表示
     if (currentUser) {
+        console.log('ユーザー情報を画面に表示:', currentUser.displayName);
         document.getElementById('user-name').textContent = currentUser.displayName || 'ユーザー';
         if (currentUser.photoURL) {
             document.getElementById('user-avatar').innerHTML = `<img src="${currentUser.photoURL}" alt="アバター" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
