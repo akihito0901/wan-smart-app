@@ -1,7 +1,7 @@
 // Firebase v9 SDK imports
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, signInWithCredential, GoogleAuthProvider, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
 
 // Firebase設定
@@ -73,6 +73,11 @@ function setupEventListeners() {
 
     // 散歩開始
     document.getElementById('start-walk-btn').addEventListener('click', startWalk);
+    
+    // 履歴フィルター
+    document.getElementById('filter-all').addEventListener('click', () => loadWalkHistory('all'));
+    document.getElementById('filter-week').addEventListener('click', () => loadWalkHistory('week'));
+    document.getElementById('filter-month').addEventListener('click', () => loadWalkHistory('month'));
 }
 
 // Googleログイン処理
@@ -143,6 +148,11 @@ function switchTab(tabName) {
                 map.setCenter(userLocation);
             }
         }, 100);
+    }
+    
+    // 履歴タブの場合、履歴を読み込み
+    if (tabName === 'history') {
+        loadWalkHistory('all');
     }
 }
 
@@ -681,6 +691,153 @@ function loadFriends() {
         
         friendsContainer.appendChild(friendElement);
     });
+}
+
+// 散歩履歴読み込み
+async function loadWalkHistory(filter = 'all') {
+    if (!currentUser) return;
+    
+    console.log('散歩履歴を読み込み:', filter);
+    
+    // フィルターボタンの状態更新
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`filter-${filter}`).classList.add('active');
+    
+    const historyList = document.getElementById('history-list');
+    historyList.innerHTML = '<div class="loading-message">履歴を読み込み中...</div>';
+    
+    try {
+        // Firestoreから散歩履歴を取得
+        const walks = [];
+        const walksRef = collection(db, 'walks');
+        const q = query(
+            walksRef,
+            where('userId', '==', currentUser.uid),
+            where('status', '==', 'completed'),
+            orderBy('startTime', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            if (data.startTime && data.endTime) {
+                walks.push({
+                    id: doc.id,
+                    ...data,
+                    startTime: data.startTime.toDate(),
+                    endTime: data.endTime.toDate()
+                });
+            }
+        });
+        
+        // フィルター適用
+        const filteredWalks = filterWalks(walks, filter);
+        
+        // 履歴表示
+        displayWalkHistory(filteredWalks);
+        
+        // 統計情報更新
+        updateHistorySummary(filteredWalks);
+        
+    } catch (error) {
+        console.error('履歴読み込みエラー:', error);
+        historyList.innerHTML = '<div class="no-history"><h4>履歴の読み込みに失敗しました</h4><p>もう一度お試しください</p></div>';
+    }
+}
+
+// 履歴フィルター
+function filterWalks(walks, filter) {
+    const now = new Date();
+    
+    switch (filter) {
+        case 'week':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            return walks.filter(walk => walk.startTime >= weekAgo);
+        case 'month':
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            return walks.filter(walk => walk.startTime >= monthAgo);
+        default:
+            return walks;
+    }
+}
+
+// 履歴表示
+function displayWalkHistory(walks) {
+    const historyList = document.getElementById('history-list');
+    
+    if (walks.length === 0) {
+        historyList.innerHTML = `
+            <div class="no-history">
+                <h4>散歩履歴がありません</h4>
+                <p>散歩を始めて記録を作りましょう！🐕</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const historyHTML = walks.map(walk => {
+        const date = formatDate(walk.startTime);
+        const time = formatTime(walk.startTime);
+        const distance = walk.distance ? walk.distance.toFixed(2) : '0.00';
+        const duration = walk.duration || 0;
+        
+        return `
+            <div class="history-item">
+                <div class="history-header">
+                    <div>
+                        <div class="history-date">${date}</div>
+                        <div class="history-time">${time}</div>
+                    </div>
+                </div>
+                <div class="history-stats">
+                    <div class="history-stat">
+                        <span class="history-stat-value">${distance}</span>
+                        <span class="history-stat-label">km</span>
+                    </div>
+                    <div class="history-stat">
+                        <span class="history-stat-value">${duration}</span>
+                        <span class="history-stat-label">分</span>
+                    </div>
+                    <div class="history-stat">
+                        <span class="history-stat-value">${distance > 0 && duration > 0 ? (distance / duration * 60).toFixed(1) : '0.0'}</span>
+                        <span class="history-stat-label">km/h</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    historyList.innerHTML = historyHTML;
+}
+
+// 履歴統計更新
+function updateHistorySummary(walks) {
+    const totalDistance = walks.reduce((sum, walk) => sum + (walk.distance || 0), 0);
+    const totalDuration = walks.reduce((sum, walk) => sum + (walk.duration || 0), 0);
+    const avgDistance = walks.length > 0 ? totalDistance / walks.length : 0;
+    
+    document.getElementById('total-distance').textContent = totalDistance.toFixed(1);
+    document.getElementById('total-duration').textContent = totalDuration;
+    document.getElementById('avg-distance').textContent = avgDistance.toFixed(1);
+}
+
+// 日付フォーマット
+function formatDate(date) {
+    const today = new Date();
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    
+    if (date.toDateString() === today.toDateString()) {
+        return '今日';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+        return '昨日';
+    } else {
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+    }
+}
+
+// 時刻フォーマット
+function formatTime(date) {
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
 
 // アプリ初期化を実行

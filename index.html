@@ -55,6 +55,7 @@
             
             <nav class="nav-tabs">
                 <button class="tab active" data-tab="map">マップ</button>
+                <button class="tab" data-tab="history">履歴</button>
                 <button class="tab" data-tab="profile">プロフィール</button>
                 <button class="tab" data-tab="friends">友達</button>
             </nav>
@@ -86,6 +87,40 @@
                     </div>
                     
                     <button id="start-walk-btn" class="walk-button">散歩を始める 🚶‍♂️</button>
+                </div>
+            </div>
+            
+            <!-- 散歩履歴タブ -->
+            <div id="history-tab" class="tab-content">
+                <div class="content">
+                    <h3>散歩履歴 📊</h3>
+                    
+                    <div class="history-summary">
+                        <div class="summary-stats">
+                            <div class="summary-item">
+                                <span id="total-distance" class="summary-number">0.0</span>
+                                <span class="summary-label">総距離 (km)</span>
+                            </div>
+                            <div class="summary-item">
+                                <span id="total-duration" class="summary-number">0</span>
+                                <span class="summary-label">総時間 (分)</span>
+                            </div>
+                            <div class="summary-item">
+                                <span id="avg-distance" class="summary-number">0.0</span>
+                                <span class="summary-label">平均距離 (km)</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-filters">
+                        <button id="filter-all" class="filter-btn active">すべて</button>
+                        <button id="filter-week" class="filter-btn">今週</button>
+                        <button id="filter-month" class="filter-btn">今月</button>
+                    </div>
+                    
+                    <div id="history-list" class="history-list">
+                        <div class="loading-message">履歴を読み込み中...</div>
+                    </div>
                 </div>
             </div>
             
