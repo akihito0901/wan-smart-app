@@ -442,6 +442,9 @@ async function loadUserProfile() {
             // 統計情報更新
             document.getElementById('total-walks').textContent = data.totalWalks || 0;
             document.getElementById('friends-count').textContent = data.friendsCount || 0;
+            
+            // 表示名を愛犬の名前に更新
+            document.getElementById('user-name').textContent = data.dogName || data.userName || currentUser.displayName;
         }
     } catch (error) {
         console.error('プロフィール読み込みエラー:', error);
@@ -469,8 +472,8 @@ async function saveProfile() {
         await setDoc(docRef, profileData, { merge: true });
         
         alert('プロフィールを保存しました！');
-        // 表示名更新
-        document.getElementById('user-name').textContent = profileData.userName || currentUser.displayName;
+        // 表示名を愛犬の名前に更新
+        document.getElementById('user-name').textContent = profileData.dogName || profileData.userName || currentUser.displayName;
     } catch (error) {
         console.error('プロフィール保存エラー:', error);
         alert('保存に失敗しました。もう一度お試しください。');
