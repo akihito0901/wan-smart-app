@@ -1,6 +1,6 @@
 // Firebase v9 SDK imports
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getAuth, signInWithCredential, GoogleAuthProvider, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 // Firebase Storage は Base64 を使用するため不要
 // import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
@@ -63,6 +63,12 @@ function initializeAppAuth() {
 
 // イベントリスナー設定
 function setupEventListeners() {
+    // Googleログインボタン
+    const googleLoginBtn = document.getElementById('google-login-btn');
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', signInWithGoogle);
+    }
+
     // タブ切り替え
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach(tab => {
@@ -133,21 +139,20 @@ function setupEventListeners() {
     }
 }
 
-// Googleログイン処理
-window.handleCredentialResponse = function(response) {
-    console.log('Googleログイン開始:', response);
-    const credential = GoogleAuthProvider.credential(response.credential);
+// Firebase Authを使ったGoogleログイン
+async function signInWithGoogle() {
+    const provider = new GoogleAuthProvider();
     
-    signInWithCredential(auth, credential)
-        .then((result) => {
-            console.log('ログイン成功:', result.user);
-            console.log('ユーザー情報:', result.user.displayName, result.user.email);
-        })
-        .catch((error) => {
-            console.error('ログインエラー:', error);
-            alert('ログインに失敗しました。もう一度お試しください。');
-        });
-};
+    try {
+        console.log('Googleログイン開始');
+        const result = await signInWithPopup(auth, provider);
+        console.log('ログイン成功:', result.user);
+        console.log('ユーザー情報:', result.user.displayName, result.user.email);
+    } catch (error) {
+        console.error('ログインエラー:', error);
+        alert('ログインに失敗しました。もう一度お試しください。');
+    }
+}
 
 // ログアウト
 function logout() {
