@@ -358,6 +358,14 @@ function switchTab(tabName) {
 function getCurrentLocation() {
     console.log('Getting current location...');
     
+    // Google Maps APIが無効の場合はプレースホルダーを表示
+    if (typeof google === 'undefined') {
+        console.log('Google Maps API not loaded - showing placeholder');
+        showMapPlaceholder();
+        loadNearbyDogs();
+        return;
+    }
+    
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -371,7 +379,8 @@ function getCurrentLocation() {
                 if (typeof google !== 'undefined' && google.maps) {
                     initializeMap();
                 } else {
-                    console.log('Waiting for Google Maps API to load...');
+                    console.log('Google Maps API not available - showing placeholder');
+                    showMapPlaceholder();
                 }
                 loadNearbyDogs();
             },
@@ -385,7 +394,8 @@ function getCurrentLocation() {
                 if (typeof google !== 'undefined' && google.maps) {
                     initializeMap();
                 } else {
-                    console.log('Waiting for Google Maps API to load...');
+                    console.log('Google Maps API not available - showing placeholder');
+                    showMapPlaceholder();
                 }
                 loadNearbyDogs();
             },
@@ -402,9 +412,23 @@ function getCurrentLocation() {
         if (typeof google !== 'undefined' && google.maps) {
             initializeMap();
         } else {
-            console.log('Waiting for Google Maps API to load...');
+            console.log('Google Maps API not available - showing placeholder');
+            showMapPlaceholder();
         }
         loadNearbyDogs();
+    }
+}
+
+// マッププレースホルダーを表示
+function showMapPlaceholder() {
+    const placeholder = document.getElementById('map-placeholder');
+    const loading = document.getElementById('map-loading');
+    
+    if (placeholder) {
+        placeholder.style.display = 'flex';
+    }
+    if (loading) {
+        loading.classList.add('hidden');
     }
 }
 

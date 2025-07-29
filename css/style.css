@@ -183,6 +183,62 @@ header {
     display: none;
 }
 
+.map-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    z-index: 2;
+}
+
+.placeholder-content {
+    text-align: center;
+    padding: 30px;
+    max-width: 300px;
+}
+
+.placeholder-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.placeholder-content h4 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 20px;
+}
+
+.placeholder-content p {
+    margin: 0 0 20px 0;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.placeholder-features {
+    margin-bottom: 20px;
+}
+
+.feature-item {
+    margin: 8px 0;
+    font-size: 13px;
+    color: #495057;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.placeholder-content small {
+    color: #868e96;
+    font-style: italic;
+}
+
 /* 近くの犬セクション */
 .nearby-section {
     margin-bottom: 20px;
