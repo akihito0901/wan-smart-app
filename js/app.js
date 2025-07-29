@@ -356,6 +356,8 @@ function switchTab(tabName) {
 
 // 位置情報取得
 function getCurrentLocation() {
+    console.log('Getting current location...');
+    
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -363,29 +365,72 @@ function getCurrentLocation() {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
                 };
-                initMap();
+                console.log('Location obtained:', userLocation);
+                
+                // Google Maps APIが読み込まれているかチェック
+                if (typeof google !== 'undefined' && google.maps) {
+                    initializeMap();
+                } else {
+                    console.log('Waiting for Google Maps API to load...');
+                }
                 loadNearbyDogs();
             },
             (error) => {
                 console.error('位置情報取得エラー:', error);
                 // デフォルト位置（東京駅）
                 userLocation = { lat: 35.6812, lng: 139.7671 };
-                initMap();
+                console.log('Using default location:', userLocation);
+                
+                // Google Maps APIが読み込まれているかチェック
+                if (typeof google !== 'undefined' && google.maps) {
+                    initializeMap();
+                } else {
+                    console.log('Waiting for Google Maps API to load...');
+                }
                 loadNearbyDogs();
+            },
+            {
+                timeout: 10000, // 10秒でタイムアウト
+                maximumAge: 300000, // 5分間はキャッシュを使用
+                enableHighAccuracy: true
             }
         );
     } else {
         console.error('位置情報がサポートされていません');
         userLocation = { lat: 35.6812, lng: 139.7671 };
-        initMap();
+        
+        if (typeof google !== 'undefined' && google.maps) {
+            initializeMap();
+        } else {
+            console.log('Waiting for Google Maps API to load...');
+        }
         loadNearbyDogs();
     }
 }
 
 // Googleマップ初期化
 window.initMap = function() {
-    if (!userLocation || typeof google === 'undefined' || !google.maps) {
-        console.log('Google Maps API not loaded or user location not available');
+    console.log('initMap called by Google Maps API');
+    
+    if (!userLocation) {
+        console.log('User location not available, using default location');
+        userLocation = { lat: 35.6812, lng: 139.7671 }; // 東京駅
+    }
+    
+    if (typeof google === 'undefined' || !google.maps) {
+        console.error('Google Maps API not loaded');
+        return;
+    }
+    
+    initializeMap();
+};
+
+// マップを実際に初期化する関数
+function initializeMap() {
+    console.log('Initializing map with location:', userLocation);
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) {
+        console.error('Map container not found');
         return;
     }
     
@@ -407,7 +452,25 @@ window.initMap = function() {
         ]
     };
     
-    map = new google.maps.Map(document.getElementById('map'), mapOptions);
+    try {
+        map = new google.maps.Map(mapContainer, mapOptions);
+        console.log('Map created successfully');
+        
+        // ローディング表示を隠す
+        const loadingElement = document.getElementById('map-loading');
+        if (loadingElement) {
+            loadingElement.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('Error creating map:', error);
+        
+        // エラー表示
+        const loadingElement = document.getElementById('map-loading');
+        if (loadingElement) {
+            loadingElement.innerHTML = '<p style="color: #dc3545;">マップの読み込みに失敗しました</p>';
+        }
+        return;
+    }
     
     // 現在位置マーカー
     new google.maps.Marker({

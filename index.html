@@ -6,8 +6,8 @@
     <title>わんスマート - 犬の散歩・ソーシャルアプリ</title>
     <link rel="stylesheet" href="css/style.css">
     <!-- Google Identity Services removed - using Firebase Auth instead -->
-    <!-- 一時的にマップAPIをコメントアウト -->
-    <!-- <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBu63l8Orqplq2EnLTkigilHQBeBpVvXLc&callback=initMap"></script> -->
+    <!-- Google Maps JavaScript API -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBu63l8Orqplq2EnLTkigilHQBeBpVvXLc&callback=initMap"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
     <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
@@ -59,7 +59,13 @@
             <!-- マップタブ -->
             <div id="map-tab" class="tab-content active">
                 <div class="content">
-                    <div id="map" class="map-container"></div>
+                    <div class="map-container">
+                        <div id="map"></div>
+                        <div id="map-loading" class="map-loading">
+                            <div class="loading"></div>
+                            <p>マップを読み込み中...</p>
+                        </div>
+                    </div>
                     
                     <div class="nearby-section">
                         <h3>近くの犬友達</h3>
