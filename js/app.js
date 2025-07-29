@@ -179,6 +179,18 @@ function setupEventListeners() {
         startWalkBtn.addEventListener('click', startWalk);
     }
     
+    // 散歩一時停止
+    const pauseWalkBtn = document.getElementById('pause-walk-btn');
+    if (pauseWalkBtn) {
+        pauseWalkBtn.addEventListener('click', pauseWalk);
+    }
+    
+    // 散歩終了
+    const stopWalkBtn = document.getElementById('stop-walk-btn');
+    if (stopWalkBtn) {
+        stopWalkBtn.addEventListener('click', stopWalk);
+    }
+    
     // 履歴フィルター
     const filterAllBtn = document.getElementById('filter-all');
     if (filterAllBtn) {
@@ -915,15 +927,119 @@ function startWalkStatsDisplay() {
     
     // 1秒ごとに統計を更新
     walkStatsInterval = setInterval(() => {
-        if (walkData && walkData.status === 'active') {
+        if (walkData && (walkData.status === 'active' || walkData.status === 'paused')) {
             // 経過時間を計算（分）
-            const duration = Math.round((new Date() - walkData.startTime) / 1000 / 60);
+            const currentTime = new Date();
+            let totalDuration = walkData.duration || 0; // 累積時間（分）
+            
+            if (walkData.status === 'active' && walkData.resumeTime) {
+                // アクティブ時の追加時間
+                totalDuration += Math.round((currentTime - walkData.resumeTime) / 1000 / 60);
+            } else if (walkData.status === 'active') {
+                // 開始からの経過時間
+                totalDuration = Math.round((currentTime - walkData.startTime) / 1000 / 60);
+            }
+            
+            // ペース計算（km/h）
+            const pace = totalDuration > 0 ? (walkData.distance / (totalDuration / 60)).toFixed(1) : '0.0';
             
             // 画面に表示
             document.getElementById('current-distance').textContent = walkData.distance.toFixed(2);
-            document.getElementById('current-duration').textContent = duration;
+            document.getElementById('current-duration').textContent = totalDuration;
+            document.getElementById('current-pace').textContent = pace;
+            
+            // 状況に応じてボタン表示を切り替え
+            updateWalkControls(walkData.status);
         }
     }, 1000);
+}
+
+function updateWalkControls(status) {
+    const pauseBtn = document.getElementById('pause-walk-btn');
+    const stopBtn = document.getElementById('stop-walk-btn');
+    const startBtn = document.getElementById('start-walk-btn');
+    
+    if (status === 'active') {
+        pauseBtn.textContent = '⏸️ 一時停止';
+        pauseBtn.classList.remove('resume-btn');
+        pauseBtn.classList.add('pause-btn');
+    } else if (status === 'paused') {
+        pauseBtn.textContent = '▶️ 再開';
+        pauseBtn.classList.remove('pause-btn');
+        pauseBtn.classList.add('resume-btn');
+    }
+}
+
+// 散歩一時停止
+function pauseWalk() {
+    if (!walkData) return;
+    
+    if (walkData.status === 'active') {
+        // 一時停止
+        const currentTime = new Date();
+        walkData.status = 'paused';
+        walkData.duration = Math.round((currentTime - (walkData.resumeTime || walkData.startTime)) / 1000 / 60);
+        walkData.pauseTime = currentTime;
+        
+        console.log('散歩を一時停止しました');
+        alert('散歩を一時停止しました');
+        
+    } else if (walkData.status === 'paused') {
+        // 再開
+        walkData.status = 'active';
+        walkData.resumeTime = new Date();
+        
+        console.log('散歩を再開しました');
+        alert('散歩を再開しました');
+    }
+    
+    updateWalkControls(walkData.status);
+}
+
+// 散歩終了
+async function stopWalk() {
+    if (!walkData) return;
+    
+    if (confirm('散歩を終了しますか？')) {
+        try {
+            // 最終統計を計算
+            const endTime = new Date();
+            let totalDuration = walkData.duration || 0;
+            
+            if (walkData.status === 'active' && walkData.resumeTime) {
+                totalDuration += Math.round((endTime - walkData.resumeTime) / 1000 / 60);
+            } else if (walkData.status === 'active') {
+                totalDuration = Math.round((endTime - walkData.startTime) / 1000 / 60);
+            }
+            
+            // Firestoreに散歩記録を保存
+            const walkRecord = {
+                userId: currentUser.uid,
+                startTime: walkData.startTime,
+                endTime: endTime,
+                distance: walkData.distance,
+                duration: totalDuration,
+                averagePace: totalDuration > 0 ? (walkData.distance / (totalDuration / 60)).toFixed(1) : 0,
+                status: 'completed'
+            };
+            
+            await addDoc(collection(db, 'walk_records'), walkRecord);
+            
+            // 散歩データをリセット
+            walkData = null;
+            
+            // UI更新
+            stopWalkStatsDisplay();
+            document.getElementById('start-walk-btn').textContent = '🚶‍♂️ 散歩開始';
+            
+            console.log('散歩を終了し、記録を保存しました');
+            alert(`散歩お疲れさまでした！\n距離: ${walkRecord.distance.toFixed(2)}km\n時間: ${totalDuration}分`);
+            
+        } catch (error) {
+            console.error('散歩記録の保存エラー:', error);
+            alert('記録の保存に失敗しました');
+        }
+    }
 }
 
 function stopWalkStatsDisplay() {

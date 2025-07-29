@@ -346,6 +346,141 @@ header {
     box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
 }
 
+/* 散歩中統計セクション */
+.walk-stats-section {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: 2px solid #28a745;
+}
+
+.walk-stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.walk-stats-header h4 {
+    margin: 0;
+    color: #28a745;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.walk-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #28a745;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    background: #28a745;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.walk-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid #e9ecef;
+}
+
+.stat-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #28a745;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.walk-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.walk-control-btn {
+    flex: 1;
+    max-width: 150px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.walk-control-btn.pause-btn {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #212529;
+}
+
+.walk-control-btn.pause-btn:hover {
+    background: linear-gradient(135deg, #e0a800, #d39e00);
+    transform: translateY(-1px);
+}
+
+.walk-control-btn.stop-btn {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+}
+
+.walk-control-btn.stop-btn:hover {
+    background: linear-gradient(135deg, #c82333, #a02622);
+    transform: translateY(-1px);
+}
+
+.walk-control-btn.resume-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.walk-control-btn.resume-btn:hover {
+    background: linear-gradient(135deg, #20c997, #17a2b8);
+    transform: translateY(-1px);
+}
+
 .map-toggle-hidden .map-container {
     height: 60px;
     transition: height 0.3s ease;
@@ -1572,6 +1707,42 @@ header {
     .action-buttons-section {
         padding: 12px;
         margin-bottom: 12px;
+    }
+    
+    /* 散歩統計のレスポンシブ */
+    .walk-stats-section {
+        padding: 15px;
+        margin-bottom: 12px;
+    }
+    
+    .walk-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .stat-card {
+        padding: 12px;
+    }
+    
+    .stat-number {
+        font-size: 20px;
+    }
+    
+    .stat-icon {
+        font-size: 20px;
+        margin-bottom: 6px;
+    }
+    
+    .walk-controls {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .walk-control-btn {
+        max-width: none;
+        font-size: 12px;
+        padding: 8px 14px;
     }
     
     /* マップコントロールボタンのサイズ調整 */

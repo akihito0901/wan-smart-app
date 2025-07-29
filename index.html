@@ -72,6 +72,44 @@
                         </div>
                     </div>
                     
+                    <!-- 散歩中統計表示 -->
+                    <div id="walk-stats" class="walk-stats-section hidden">
+                        <div class="walk-stats-header">
+                            <h4>🚶‍♂️ 散歩中</h4>
+                            <div class="walk-status-indicator">
+                                <div class="status-dot"></div>
+                                <span>記録中</span>
+                            </div>
+                        </div>
+                        <div class="walk-stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">📏</div>
+                                <div class="stat-content">
+                                    <span id="current-distance" class="stat-number">0.00</span>
+                                    <span class="stat-label">km</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">⏰</div>
+                                <div class="stat-content">
+                                    <span id="current-duration" class="stat-number">0</span>
+                                    <span class="stat-label">分</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">⚡</div>
+                                <div class="stat-content">
+                                    <span id="current-pace" class="stat-number">0.0</span>
+                                    <span class="stat-label">km/h</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="walk-controls">
+                            <button id="pause-walk-btn" class="walk-control-btn pause-btn">⏸️ 一時停止</button>
+                            <button id="stop-walk-btn" class="walk-control-btn stop-btn">⏹️ 終了</button>
+                        </div>
+                    </div>
+                    
                     <!-- 無料マップ（OpenStreetMap with Leaflet） -->
                     <div class="map-container">
                         <div id="leaflet-map" class="map"></div>
@@ -127,20 +165,6 @@
                         <h3>近くの犬友達</h3>
                         <div id="nearby-dogs" class="dog-list">
                             <!-- 動的にデータが追加されます -->
-                        </div>
-                    </div>
-                    
-                    <div id="walk-stats" class="walk-stats hidden">
-                        <h4>散歩中 🚶‍♂️</h4>
-                        <div class="stats">
-                            <div class="stat-item">
-                                <span id="current-distance" class="stat-number">0.00</span>
-                                <span class="stat-label">km</span>
-                            </div>
-                            <div class="stat-item">
-                                <span id="current-duration" class="stat-number">0</span>
-                                <span class="stat-label">分</span>
-                            </div>
                         </div>
                     </div>
                 </div>
