@@ -18,11 +18,18 @@ const firebaseConfig = {
 };
 
 // Firebase初期化
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-// const storage = getStorage(app); // Base64使用により不要
-const analytics = getAnalytics(app);
+let app, auth, db, analytics;
+
+try {
+    console.log('Firebase初期化を開始...');
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    analytics = getAnalytics(app);
+    console.log('Firebase初期化完了');
+} catch (error) {
+    console.error('Firebase初期化エラー:', error);
+}
 
 // グローバル変数
 let currentUser = null;
@@ -49,21 +56,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // アプリ初期化
 function initializeAppAuth() {
+    if (!auth) {
+        console.error('Firebase Authが初期化されていません');
+        showLoginScreen();
+        return;
+    }
+    
     console.log('認証状態監視を開始します');
-    // 認証状態の監視
-    onAuthStateChanged(auth, (user) => {
-        console.log('認証状態変更:', user ? 'ログイン中' : 'ログアウト中');
-        if (user) {
-            console.log('ユーザー情報:', user.displayName, user.email);
-            currentUser = user;
-            showMainApp();
-            loadUserProfile();
-            loadFriends();
-        } else {
-            console.log('ログアウト状態のため、ログイン画面を表示');
-            showLoginScreen();
-        }
-    });
+    
+    try {
+        // 認証状態の監視
+        onAuthStateChanged(auth, (user) => {
+            console.log('認証状態変更:', user ? 'ログイン中' : 'ログアウト中');
+            if (user) {
+                console.log('ユーザー情報:', user.displayName, user.email);
+                currentUser = user;
+                showMainApp();
+                loadUserProfile();
+                loadFriends();
+            } else {
+                console.log('ログアウト状態のため、ログイン画面を表示');
+                showLoginScreen();
+            }
+        });
+    } catch (error) {
+        console.error('認証状態監視エラー:', error);
+        showLoginScreen();
+    }
 }
 
 // イベントリスナー設定
@@ -81,42 +100,103 @@ function setupEventListeners() {
     });
 
     // ログアウト
-    logoutBtn.addEventListener('click', logout);
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
 
     // プロフィール保存
-    document.getElementById('save-profile-btn').addEventListener('click', saveProfile);
+    const saveProfileBtn = document.getElementById('save-profile-btn');
+    if (saveProfileBtn) {
+        saveProfileBtn.addEventListener('click', saveProfile);
+    }
     
     // 誕生日変更時の年齢自動計算
-    document.getElementById('dog-birthday-input').addEventListener('change', calculateAge);
+    const dogBirthdayInput = document.getElementById('dog-birthday-input');
+    if (dogBirthdayInput) {
+        dogBirthdayInput.addEventListener('change', calculateAge);
+    }
 
     // 散歩開始
-    document.getElementById('start-walk-btn').addEventListener('click', startWalk);
+    const startWalkBtn = document.getElementById('start-walk-btn');
+    if (startWalkBtn) {
+        startWalkBtn.addEventListener('click', startWalk);
+    }
     
     // 履歴フィルター
-    document.getElementById('filter-all').addEventListener('click', () => loadWalkHistory('all'));
-    document.getElementById('filter-week').addEventListener('click', () => loadWalkHistory('week'));
-    document.getElementById('filter-month').addEventListener('click', () => loadWalkHistory('month'));
+    const filterAllBtn = document.getElementById('filter-all');
+    if (filterAllBtn) {
+        filterAllBtn.addEventListener('click', () => loadWalkHistory('all'));
+    }
+    
+    const filterWeekBtn = document.getElementById('filter-week');
+    if (filterWeekBtn) {
+        filterWeekBtn.addEventListener('click', () => loadWalkHistory('week'));
+    }
+    
+    const filterMonthBtn = document.getElementById('filter-month');
+    if (filterMonthBtn) {
+        filterMonthBtn.addEventListener('click', () => loadWalkHistory('month'));
+    }
     
     // メッセージ機能のイベントリスナー
-    document.getElementById('back-to-messages').addEventListener('click', backToMessagesList);
-    document.getElementById('send-message').addEventListener('click', sendMessage);
-    document.getElementById('message-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
-    });
+    const backToMessagesBtn = document.getElementById('back-to-messages');
+    if (backToMessagesBtn) {
+        backToMessagesBtn.addEventListener('click', backToMessagesList);
+    }
+    
+    const sendMessageBtn = document.getElementById('send-message');
+    if (sendMessageBtn) {
+        sendMessageBtn.addEventListener('click', sendMessage);
+    }
+    
+    const messageInput = document.getElementById('message-input');
+    if (messageInput) {
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    }
     
     // 友達グループ管理のイベントリスナー
-    document.getElementById('add-group-btn').addEventListener('click', showGroupManagementModal);
-    document.getElementById('manage-groups-btn').addEventListener('click', showGroupManagementModal);
-    document.getElementById('close-group-modal').addEventListener('click', hideGroupManagementModal);
-    document.getElementById('close-friend-group-modal').addEventListener('click', hideFriendGroupModal);
-    document.getElementById('save-friend-groups').addEventListener('click', saveFriendGroups);
-    document.getElementById('cancel-friend-groups').addEventListener('click', hideFriendGroupModal);
-    document.querySelector('.add-new-group-btn').addEventListener('click', addNewGroup);
+    const addGroupBtn = document.getElementById('add-group-btn');
+    if (addGroupBtn) {
+        addGroupBtn.addEventListener('click', showGroupManagementModal);
+    }
+    
+    const manageGroupsBtn = document.getElementById('manage-groups-btn');
+    if (manageGroupsBtn) {
+        manageGroupsBtn.addEventListener('click', showGroupManagementModal);
+    }
+    
+    const closeGroupModalBtn = document.getElementById('close-group-modal');
+    if (closeGroupModalBtn) {
+        closeGroupModalBtn.addEventListener('click', hideGroupManagementModal);
+    }
+    
+    const closeFriendGroupModalBtn = document.getElementById('close-friend-group-modal');
+    if (closeFriendGroupModalBtn) {
+        closeFriendGroupModalBtn.addEventListener('click', hideFriendGroupModal);
+    }
+    
+    const saveFriendGroupsBtn = document.getElementById('save-friend-groups');
+    if (saveFriendGroupsBtn) {
+        saveFriendGroupsBtn.addEventListener('click', saveFriendGroups);
+    }
+    
+    const cancelFriendGroupsBtn = document.getElementById('cancel-friend-groups');
+    if (cancelFriendGroupsBtn) {
+        cancelFriendGroupsBtn.addEventListener('click', hideFriendGroupModal);
+    }
+    
+    const addNewGroupBtn = document.querySelector('.add-new-group-btn');
+    if (addNewGroupBtn) {
+        addNewGroupBtn.addEventListener('click', addNewGroup);
+    }
     
     // グループフィルターのイベントリスナー
-    document.querySelectorAll('.group-filter-btn').forEach(btn => {
+    const groupFilterBtns = document.querySelectorAll('.group-filter-btn');
+    groupFilterBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             const group = e.target.dataset.group;
             filterFriendsByGroup(group);
@@ -172,6 +252,12 @@ function setupEventListeners() {
 
 // Firebase Authを使ったGoogleログイン
 async function signInWithGoogle() {
+    if (!auth) {
+        console.error('Firebase Authが初期化されていません');
+        alert('認証システムの初期化に失敗しました。ページを再読み込みしてください。');
+        return;
+    }
+
     const provider = new GoogleAuthProvider();
     
     try {
@@ -181,7 +267,18 @@ async function signInWithGoogle() {
         console.log('ユーザー情報:', result.user.displayName, result.user.email);
     } catch (error) {
         console.error('ログインエラー:', error);
-        alert('ログインに失敗しました。もう一度お試しください。');
+        
+        // より詳細なエラーメッセージを表示
+        let errorMessage = 'ログインに失敗しました。';
+        if (error.code === 'auth/popup-closed-by-user') {
+            errorMessage = 'ログインがキャンセルされました。';
+        } else if (error.code === 'auth/popup-blocked') {
+            errorMessage = 'ポップアップがブロックされました。ブラウザの設定を確認してください。';
+        } else if (error.code === 'auth/cancelled-popup-request') {
+            errorMessage = 'ログイン処理がキャンセルされました。';
+        }
+        
+        alert(errorMessage + ' もう一度お試しください。');
     }
 }
 
