@@ -283,6 +283,29 @@ header {
     transform: translateY(-1px);
 }
 
+/* マップ上の散歩開始ボタン */
+.walk-button-map {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.walk-button-map:hover {
+    background: linear-gradient(135deg, #20c997, #17a2b8);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
 .map-toggle-hidden .map-container {
     height: 60px;
     transition: height 0.3s ease;
@@ -911,6 +934,20 @@ header {
     margin: 30px 0;
 }
 
+/* 横並びフォーム */
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+    min-width: 120px;
+}
+
 .form-group {
     margin-bottom: 20px;
 }
@@ -1503,6 +1540,27 @@ header {
     .nav-tabs .tab {
         font-size: 10px;
         padding: 10px 5px;
+    }
+    
+    /* フォーム横並びをモバイルで縦並びに */
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .form-row .form-group {
+        margin-bottom: 20px;
+    }
+    
+    /* マップコントロールボタンのサイズ調整 */
+    .walk-button-map {
+        font-size: 11px;
+        padding: 8px 12px;
+    }
+    
+    .map-control-btn {
+        font-size: 10px;
+        padding: 6px 10px;
     }
 }
 

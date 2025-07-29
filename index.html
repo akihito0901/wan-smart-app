@@ -67,6 +67,7 @@
                     <div class="map-container">
                         <div id="leaflet-map" class="map"></div>
                         <div class="map-controls">
+                            <button id="start-walk-btn" class="walk-button-map">🚶‍♂️ 散歩開始</button>
                             <button id="center-map-btn" class="map-control-btn">📍 現在地</button>
                             <button id="toggle-map-btn" class="map-control-btn">🗺️ 表示切替</button>
                         </div>
@@ -139,8 +140,6 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <button id="start-walk-btn" class="walk-button">散歩を始める 🚶‍♂️</button>
                 </div>
             </div>
             
@@ -201,14 +200,16 @@
                         <h3 id="user-name">ユーザー名</h3>
                         
                         <div class="profile-form">
-                            <div class="form-group">
-                                <label>お名前</label>
-                                <input type="text" id="user-name-input" placeholder="お名前を入力">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>愛犬の名前</label>
-                                <input type="text" id="dog-name-input" placeholder="愛犬の名前を入力">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>お名前</label>
+                                    <input type="text" id="user-name-input" placeholder="お名前を入力">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>愛犬の名前</label>
+                                    <input type="text" id="dog-name-input" placeholder="愛犬の名前を入力">
+                                </div>
                             </div>
                             
                             <div class="form-group">
@@ -245,24 +246,26 @@
                                 </select>
                             </div>
                             
-                            <div class="form-group">
-                                <label>誕生日</label>
-                                <input type="date" id="dog-birthday-input" min="1990-01-01" max="2030-12-31">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>年齢</label>
-                                <input type="text" id="dog-age-display" placeholder="誕生日から自動計算されます" readonly style="background: #f8f9fa; color: #666;">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>性別</label>
-                                <select id="dog-gender-select">
-                                    <option value="">性別を選択</option>
-                                    <option value="オス">オス（♂）</option>
-                                    <option value="メス">メス（♀）</option>
-                                    <option value="未確認">未確認</option>
-                                </select>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>誕生日</label>
+                                    <input type="date" id="dog-birthday-input" min="1990-01-01" max="2030-12-31">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>年齢</label>
+                                    <input type="text" id="dog-age-display" placeholder="誕生日から自動計算されます" readonly style="background: #f8f9fa; color: #666;">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>性別</label>
+                                    <select id="dog-gender-select">
+                                        <option value="">性別を選択</option>
+                                        <option value="オス">オス（♂）</option>
+                                        <option value="メス">メス（♀）</option>
+                                        <option value="未確認">未確認</option>
+                                    </select>
+                                </div>
                             </div>
                             
                             <div class="form-group">
