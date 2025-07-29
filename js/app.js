@@ -940,13 +940,9 @@ function startWalkStatsDisplay() {
                 totalDuration = Math.round((currentTime - walkData.startTime) / 1000 / 60);
             }
             
-            // ペース計算（km/h）
-            const pace = totalDuration > 0 ? (walkData.distance / (totalDuration / 60)).toFixed(1) : '0.0';
-            
             // 画面に表示
             document.getElementById('current-distance').textContent = walkData.distance.toFixed(2);
             document.getElementById('current-duration').textContent = totalDuration;
-            document.getElementById('current-pace').textContent = pace;
             
             // 状況に応じてボタン表示を切り替え
             updateWalkControls(walkData.status);
@@ -1019,7 +1015,6 @@ async function stopWalk() {
                 endTime: endTime,
                 distance: walkData.distance,
                 duration: totalDuration,
-                averagePace: totalDuration > 0 ? (walkData.distance / (totalDuration / 60)).toFixed(1) : 0,
                 status: 'completed'
             };
             
