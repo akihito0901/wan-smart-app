@@ -487,62 +487,10 @@ function initializeMap() {
         }
     });
     
-    // 散歩コースの例を表示
-    addSampleWalkingRoutes();
-    
     // 近くの公園にマーカーを追加
     addParkMarkers();
 };
 
-// サンプル散歩コース追加
-function addSampleWalkingRoutes() {
-    if (!map || !userLocation || typeof google === 'undefined' || !google.maps) return;
-    
-    const walkingPaths = [
-        {
-            path: [
-                userLocation,
-                { lat: userLocation.lat + 0.005, lng: userLocation.lng + 0.005 },
-                { lat: userLocation.lat + 0.01, lng: userLocation.lng },
-                { lat: userLocation.lat + 0.005, lng: userLocation.lng - 0.005 },
-                userLocation
-            ],
-            color: '#28a745',
-            title: '近所コース (約1.2km)'
-        },
-        {
-            path: [
-                userLocation,
-                { lat: userLocation.lat - 0.003, lng: userLocation.lng + 0.008 },
-                { lat: userLocation.lat + 0.003, lng: userLocation.lng + 0.008 },
-                userLocation
-            ],
-            color: '#17a2b8',
-            title: '公園コース (約0.8km)'
-        }
-    ];
-    
-    walkingPaths.forEach((route, index) => {
-        const polyline = new google.maps.Polyline({
-            path: route.path,
-            geodesic: true,
-            strokeColor: route.color,
-            strokeOpacity: 1.0,
-            strokeWeight: 3,
-            map: map
-        });
-        
-        // コース情報ウィンドウ
-        const infoWindow = new google.maps.InfoWindow({
-            content: `<div style="padding: 5px;"><strong>${route.title}</strong><br>クリックして詳細を見る</div>`
-        });
-        
-        polyline.addListener('click', (event) => {
-            infoWindow.setPosition(event.latLng);
-            infoWindow.open(map);
-        });
-    });
-}
 
 // 公園マーカー追加
 function addParkMarkers() {
