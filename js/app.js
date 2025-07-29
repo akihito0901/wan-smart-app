@@ -22,13 +22,29 @@ let app, auth, db, analytics;
 
 try {
     console.log('Firebase初期化を開始...');
+    console.log('Firebase設定:', firebaseConfig);
+    
     app = initializeApp(firebaseConfig);
+    console.log('Firebase App初期化完了');
+    
     auth = getAuth(app);
+    console.log('Firebase Auth初期化完了');
+    
     db = getFirestore(app);
-    analytics = getAnalytics(app);
+    console.log('Firestore初期化完了');
+    
+    try {
+        analytics = getAnalytics(app);
+        console.log('Analytics初期化完了');
+    } catch (analyticsError) {
+        console.warn('Analytics初期化スキップ:', analyticsError.message);
+    }
+    
     console.log('Firebase初期化完了');
 } catch (error) {
     console.error('Firebase初期化エラー:', error);
+    console.error('エラー詳細:', error.message);
+    alert('Firebase初期化に失敗しました: ' + error.message);
 }
 
 // グローバル変数
@@ -51,20 +67,49 @@ const logoutBtn = document.getElementById('logout-btn');
 
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', function() {
-    initializeAppAuth();
-    setupEventListeners();
-    initializeAvatar();
+    console.log('DOMContentLoaded発火');
+    
+    // DOM要素の存在確認
+    const loginScreen = document.getElementById('login-screen');
+    const mainApp = document.getElementById('main-app');
+    const googleLoginBtn = document.getElementById('google-login-btn');
+    
+    console.log('DOM要素チェック:');
+    console.log('- login-screen:', loginScreen ? '見つかりました' : '見つかりません');
+    console.log('- main-app:', mainApp ? '見つかりました' : '見つかりません');
+    console.log('- google-login-btn:', googleLoginBtn ? '見つかりました' : '見つかりません');
+    
+    if (!loginScreen || !mainApp) {
+        console.error('必要なDOM要素が見つかりません');
+        alert('アプリの初期化に失敗しました。ページを再読み込みしてください。');
+        return;
+    }
+    
+    try {
+        initializeAppAuth();
+        setupEventListeners();
+        initializeAvatar();
+    } catch (error) {
+        console.error('初期化エラー:', error);
+        alert('アプリの初期化中にエラーが発生しました: ' + error.message);
+    }
 });
 
 // アプリ初期化
 function initializeAppAuth() {
+    console.log('アプリ初期化開始');
+    console.log('Firebase Auth:', auth ? 'OK' : 'エラー');
+    console.log('Firebase DB:', db ? 'OK' : 'エラー');
+    
     if (!auth) {
         console.error('Firebase Authが初期化されていません');
+        alert('Firebase認証の初期化に失敗しました。ページを再読み込みしてください。');
         showLoginScreen();
         return;
     }
     
     console.log('認証状態監視を開始します');
+    console.log('Firebase設定 - AuthDomain:', auth.config?.authDomain);
     
     try {
         // 認証状態の監視
@@ -72,17 +117,20 @@ function initializeAppAuth() {
             console.log('認証状態変更:', user ? 'ログイン中' : 'ログアウト中');
             if (user) {
                 console.log('ユーザー情報:', user.displayName, user.email);
+                console.log('ユーザーUID:', user.uid);
                 currentUser = user;
                 showMainApp();
                 loadUserProfile();
                 loadFriends();
             } else {
                 console.log('ログアウト状態のため、ログイン画面を表示');
+                currentUser = null;
                 showLoginScreen();
             }
         });
     } catch (error) {
         console.error('認証状態監視エラー:', error);
+        alert('認証状態の監視でエラーが発生しました: ' + error.message);
         showLoginScreen();
     }
 }
@@ -92,7 +140,14 @@ function setupEventListeners() {
     // Googleログインボタン
     const googleLoginBtn = document.getElementById('google-login-btn');
     if (googleLoginBtn) {
-        googleLoginBtn.addEventListener('click', signInWithGoogle);
+        console.log('Googleログインボタン見つかりました');
+        googleLoginBtn.addEventListener('click', (e) => {
+            console.log('ログインボタンがクリックされました');
+            e.preventDefault();
+            signInWithGoogle();
+        });
+    } else {
+        console.error('Googleログインボタンが見つかりません');
     }
 
     // タブ切り替え
@@ -261,14 +316,22 @@ async function signInWithGoogle() {
     }
 
     const provider = new GoogleAuthProvider();
+    // カスタムパラメータを追加してより確実な認証を試行
+    provider.addScope('email');
+    provider.addScope('profile');
     
     try {
         console.log('Googleログイン開始');
+        console.log('現在のURL:', window.location.href);
+        console.log('Auth domain:', auth.config.authDomain);
+        
         const result = await signInWithPopup(auth, provider);
         console.log('ログイン成功:', result.user);
         console.log('ユーザー情報:', result.user.displayName, result.user.email);
     } catch (error) {
-        console.error('ログインエラー:', error);
+        console.error('ログインエラー詳細:', error);
+        console.error('エラーコード:', error.code);
+        console.error('エラーメッセージ:', error.message);
         
         // より詳細なエラーメッセージを表示
         let errorMessage = 'ログインに失敗しました。';
@@ -278,6 +341,14 @@ async function signInWithGoogle() {
             errorMessage = 'ポップアップがブロックされました。ブラウザの設定を確認してください。';
         } else if (error.code === 'auth/cancelled-popup-request') {
             errorMessage = 'ログイン処理がキャンセルされました。';
+        } else if (error.code === 'auth/unauthorized-domain') {
+            errorMessage = 'このドメインは認証が許可されていません。Firebase Consoleで承認済みドメインに追加してください。';
+        } else if (error.code === 'auth/operation-not-allowed') {
+            errorMessage = 'Googleログインが有効になっていません。Firebase Consoleで設定を確認してください。';
+        } else if (error.code === 'auth/configuration-not-found') {
+            errorMessage = 'Firebase設定が見つかりません。設定を確認してください。';
+        } else {
+            errorMessage = `ログインエラー: ${error.message}`;
         }
         
         alert(errorMessage + ' もう一度お試しください。');
@@ -296,14 +367,24 @@ function logout() {
 // 画面表示切り替え
 function showLoginScreen() {
     console.log('ログイン画面を表示');
-    loginScreen.classList.remove('hidden');
-    mainApp.classList.add('hidden');
+    if (loginScreen && mainApp) {
+        loginScreen.classList.remove('hidden');
+        mainApp.classList.add('hidden');
+        console.log('ログイン画面表示完了');
+    } else {
+        console.error('DOM要素が見つかりません - loginScreen:', !!loginScreen, 'mainApp:', !!mainApp);
+    }
 }
 
 function showMainApp() {
     console.log('メインアプリ画面を表示');
-    loginScreen.classList.add('hidden');
-    mainApp.classList.remove('hidden');
+    if (loginScreen && mainApp) {
+        loginScreen.classList.add('hidden');
+        mainApp.classList.remove('hidden');
+        console.log('メインアプリ表示完了');
+    } else {
+        console.error('DOM要素が見つかりません - loginScreen:', !!loginScreen, 'mainApp:', !!mainApp);
+    }
     
     // ユーザー情報表示
     if (currentUser) {
