@@ -593,49 +593,9 @@ function initializeMap() {
             scale: 12
         }
     });
-    
-    // 近くの公園にマーカーを追加
-    addParkMarkers();
 };
 
 
-// 公園マーカー追加
-function addParkMarkers() {
-    if (!map || !userLocation || typeof google === 'undefined' || !google.maps) return;
-    
-    const parks = [
-        {
-            position: { lat: userLocation.lat + 0.008, lng: userLocation.lng + 0.003 },
-            title: '近隣公園',
-            description: '犬の散歩に人気のスポット'
-        },
-        {
-            position: { lat: userLocation.lat - 0.005, lng: userLocation.lng + 0.007 },
-            title: 'ドッグラン付き公園',
-            description: '広いドッグランがあります'
-        }
-    ];
-    
-    parks.forEach(park => {
-        const marker = new google.maps.Marker({
-            position: park.position,
-            map: map,
-            title: park.title,
-            icon: {
-                url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDJMMTMuMDkgOC4yNkwyMCA5TDEzLjA5IDE1Ljc0TDEyIDIyTDEwLjkxIDE1Ljc0TDQgOUwxMC45MSA4LjI2TDEyIDJaIiBmaWxsPSIjNENBRjUwIi8+Cjwvc3ZnPgo=',
-                scaledSize: new google.maps.Size(30, 30)
-            }
-        });
-        
-        const infoWindow = new google.maps.InfoWindow({
-            content: `<div style="padding: 10px;"><h4>${park.title}</h4><p>${park.description}</p></div>`
-        });
-        
-        marker.addListener('click', () => {
-            infoWindow.open(map, marker);
-        });
-    });
-}
 
 // 近くの犬データ読み込み
 function loadNearbyDogs() {
