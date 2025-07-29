@@ -1505,56 +1505,6 @@ window.forceFileDialog = function() {
 
 // メッセージ機能の実装
 
-// 会話リストを読み込み
-async function loadConversations() {
-    if (!currentUser) return;
-    
-    const conversationsContainer = document.getElementById('conversations-list');
-    conversationsContainer.innerHTML = '<div class="loading-message">会話を読み込み中...</div>';
-    
-    try {
-        // サンプルデータ（実際はFirestoreから取得）
-        const sampleConversations = [
-            {
-                id: 'user1',
-                name: '田中さん & ポチ',
-                avatar: '🐕',
-                lastMessage: 'また今度一緒に散歩しましょう！',
-                lastMessageTime: new Date(Date.now() - 1000 * 60 * 30), // 30分前
-                unread: true
-            },
-            {
-                id: 'user2', 
-                name: '佐藤さん & モコ',
-                avatar: '🐩',
-                lastMessage: 'ありがとうございました',
-                lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2時間前
-                unread: false
-            }
-        ];
-        
-        if (sampleConversations.length === 0) {
-            conversationsContainer.innerHTML = `
-                <div class="no-conversations">
-                    <h4>まだメッセージがありません</h4>
-                    <p>友達リストから新しい会話を始めましょう！</p>
-                </div>
-            `;
-            return;
-        }
-        
-        conversationsContainer.innerHTML = '';
-        sampleConversations.forEach(conversation => {
-            const conversationElement = createConversationElement(conversation);
-            conversationsContainer.appendChild(conversationElement);
-        });
-        
-    } catch (error) {
-        console.error('会話リスト読み込みエラー:', error);
-        conversationsContainer.innerHTML = '<div class="no-conversations"><h4>会話の読み込みに失敗しました</h4></div>';
-    }
-}
-
 // 会話要素を作成
 function createConversationElement(conversation) {
     const conversationDiv = document.createElement('div');
@@ -1627,53 +1577,6 @@ function openChatWithFriend(friend) {
     openChat(conversation);
 }
 
-// メッセージを読み込み
-async function loadMessages(conversationId) {
-    if (!currentUser) return;
-    
-    const chatMessages = document.getElementById('chat-messages');
-    chatMessages.innerHTML = '<div class="loading-message">メッセージを読み込み中...</div>';
-    
-    try {
-        // サンプルメッセージ（実際はFirestoreから取得）
-        const sampleMessages = [
-            {
-                id: '1',
-                text: 'こんにちは！今日は散歩日和ですね',
-                senderId: conversationId,
-                timestamp: new Date(Date.now() - 1000 * 60 * 60), // 1時間前
-                isOwn: false
-            },
-            {
-                id: '2', 
-                text: 'そうですね！近くの公園で一緒に散歩しませんか？',
-                senderId: currentUser.uid,
-                timestamp: new Date(Date.now() - 1000 * 60 * 50), // 50分前
-                isOwn: true
-            },
-            {
-                id: '3',
-                text: 'いいですね！2時頃はいかがですか？',
-                senderId: conversationId,
-                timestamp: new Date(Date.now() - 1000 * 60 * 40), // 40分前
-                isOwn: false
-            },
-            {
-                id: '4',
-                text: 'OKです！お待ちしています',
-                senderId: currentUser.uid,
-                timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30分前
-                isOwn: true
-            }
-        ];
-        
-        displayMessages(sampleMessages);
-        
-    } catch (error) {
-        console.error('メッセージ読み込みエラー:', error);
-        chatMessages.innerHTML = '<div class="no-messages">メッセージの読み込みに失敗しました</div>';
-    }
-}
 
 // メッセージを表示
 function displayMessages(messages) {
