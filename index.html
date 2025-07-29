@@ -53,6 +53,7 @@
                 <button class="tab" data-tab="history">履歴</button>
                 <button class="tab" data-tab="profile">プロフィール</button>
                 <button class="tab" data-tab="friends">友達</button>
+                <button class="tab" data-tab="messages">メッセージ</button>
             </nav>
             
             <!-- マップタブ -->
@@ -234,9 +235,110 @@
             <!-- 友達タブ -->
             <div id="friends-tab" class="tab-content">
                 <div class="content">
-                    <h3>友達リスト</h3>
-                    <div id="friends-list" class="dog-list">
+                    <div class="friends-header">
+                        <h3>友達リスト</h3>
+                        <div class="friends-controls">
+                            <button id="add-group-btn" class="add-group-btn">+ グループ追加</button>
+                            <button id="manage-groups-btn" class="manage-groups-btn">グループ管理</button>
+                        </div>
+                    </div>
+                    
+                    <div class="group-filters">
+                        <button class="group-filter-btn active" data-group="all">すべて</button>
+                        <button class="group-filter-btn" data-group="close-friends">親しい友達</button>
+                        <button class="group-filter-btn" data-group="walking-buddies">散歩仲間</button>
+                        <button class="group-filter-btn" data-group="park-friends">公園友達</button>
+                    </div>
+                    
+                    <div id="friends-list" class="friends-container">
                         <!-- 動的にデータが追加されます -->
+                    </div>
+                </div>
+                
+                <!-- グループ管理モーダル -->
+                <div id="group-management-modal" class="modal hidden">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4>グループ管理</h4>
+                            <button id="close-group-modal" class="close-modal-btn">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="group-list">
+                                <div class="group-item">
+                                    <input type="text" class="group-name-input" placeholder="新しいグループ名">
+                                    <button class="add-new-group-btn">追加</button>
+                                </div>
+                                <div id="existing-groups">
+                                    <!-- 既存のグループが動的に追加されます -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 友達のグループ変更モーダル -->
+                <div id="friend-group-modal" class="modal hidden">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 id="friend-group-title">友達のグループを変更</h4>
+                            <button id="close-friend-group-modal" class="close-modal-btn">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="friend-info">
+                                <div id="selected-friend-avatar" class="friend-modal-avatar">🐕</div>
+                                <div id="selected-friend-name" class="friend-modal-name">友達の名前</div>
+                            </div>
+                            <div class="group-selection">
+                                <h5>グループを選択:</h5>
+                                <div id="group-checkboxes">
+                                    <!-- グループのチェックボックスが動的に追加されます -->
+                                </div>
+                            </div>
+                            <div class="modal-actions">
+                                <button id="save-friend-groups" class="save-btn">保存</button>
+                                <button id="cancel-friend-groups" class="cancel-btn">キャンセル</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- メッセージタブ -->
+            <div id="messages-tab" class="tab-content">
+                <div class="content">
+                    <div id="message-list-view" class="message-view">
+                        <h3>メッセージ</h3>
+                        <div id="conversations-list" class="conversations-list">
+                            <!-- 会話リストが動的に追加されます -->
+                        </div>
+                    </div>
+                    
+                    <div id="message-chat-view" class="message-view hidden">
+                        <div class="chat-header">
+                            <button id="back-to-messages" class="back-btn">← 戻る</button>
+                            <div class="chat-info">
+                                <img id="chat-avatar" class="chat-avatar" src="" alt="">
+                                <div class="chat-name-info">
+                                    <h4 id="chat-name">友達の名前</h4>
+                                    <p id="chat-status" class="chat-status">オンライン</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-messages" id="chat-messages">
+                            <!-- チャットメッセージが動的に追加されます -->
+                        </div>
+                        
+                        <div class="chat-input-area">
+                            <div class="input-container">
+                                <input type="text" id="message-input" placeholder="メッセージを入力..." maxlength="500">
+                                <button id="send-message" class="send-btn">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                        <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="currentColor"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

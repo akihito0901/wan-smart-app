@@ -1,7 +1,7 @@
 // Firebase v9 SDK imports
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, onSnapshot, updateDoc, arrayUnion, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 // Firebase Storage は Base64 を使用するため不要
 // import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
 import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
@@ -29,6 +29,11 @@ let currentUser = null;
 let map = null;
 let userLocation = null;
 let walkData = null; // 散歩中のデータ
+let currentChatUser = null; // 現在チャット中のユーザー
+let messagesListener = null; // メッセージリアルタイム監視
+let currentGroups = ['close-friends', 'walking-buddies', 'park-friends']; // デフォルトグループ
+let selectedFriend = null; // 選択された友達（グループ変更用）
+let currentFilter = 'all'; // 現在のフィルター
 
 // DOM要素
 const loginScreen = document.getElementById('login-screen');
@@ -91,6 +96,32 @@ function setupEventListeners() {
     document.getElementById('filter-all').addEventListener('click', () => loadWalkHistory('all'));
     document.getElementById('filter-week').addEventListener('click', () => loadWalkHistory('week'));
     document.getElementById('filter-month').addEventListener('click', () => loadWalkHistory('month'));
+    
+    // メッセージ機能のイベントリスナー
+    document.getElementById('back-to-messages').addEventListener('click', backToMessagesList);
+    document.getElementById('send-message').addEventListener('click', sendMessage);
+    document.getElementById('message-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+    
+    // 友達グループ管理のイベントリスナー
+    document.getElementById('add-group-btn').addEventListener('click', showGroupManagementModal);
+    document.getElementById('manage-groups-btn').addEventListener('click', showGroupManagementModal);
+    document.getElementById('close-group-modal').addEventListener('click', hideGroupManagementModal);
+    document.getElementById('close-friend-group-modal').addEventListener('click', hideFriendGroupModal);
+    document.getElementById('save-friend-groups').addEventListener('click', saveFriendGroups);
+    document.getElementById('cancel-friend-groups').addEventListener('click', hideFriendGroupModal);
+    document.querySelector('.add-new-group-btn').addEventListener('click', addNewGroup);
+    
+    // グループフィルターのイベントリスナー
+    document.querySelectorAll('.group-filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const group = e.target.dataset.group;
+            filterFriendsByGroup(group);
+        });
+    });
     
     // プロフィール画像アップロード（インスタグラム風）
     const userAvatar = document.getElementById('user-avatar');
@@ -217,6 +248,12 @@ function switchTab(tabName) {
     // 履歴タブの場合、履歴を読み込み
     if (tabName === 'history') {
         loadWalkHistory('all');
+    }
+    
+    // メッセージタブの場合、会話リストを読み込み
+    if (tabName === 'messages') {
+        loadConversations();
+        showMessagesList();
     }
 }
 
@@ -745,7 +782,7 @@ async function updateWalkCount() {
     }
 }
 
-// 友達リスト読み込み
+// 友達リスト読み込み（グループ分け対応）
 function loadFriends() {
     if (!currentUser) return;
     
@@ -756,42 +793,174 @@ function loadFriends() {
             ownerName: '田中さん',
             dogName: 'ポチ',
             lastMet: '昨日一緒に散歩しました',
-            avatar: '🐕'
+            avatar: '🐕',
+            groups: ['close-friends', 'walking-buddies']
         },
         {
             id: 2,
             ownerName: '佐藤さん',
             dogName: 'モコ',
             lastMet: '3日前に公園で会いました',
-            avatar: '🐩'
+            avatar: '🐩',
+            groups: ['walking-buddies']
+        },
+        {
+            id: 3,
+            ownerName: '鈴木さん',
+            dogName: 'ラブ',
+            lastMet: '1週間前に公園で会いました',
+            avatar: '🦮',
+            groups: ['park-friends']
+        },
+        {
+            id: 4,
+            ownerName: '山田さん',
+            dogName: 'チョコ',
+            lastMet: '2週間前に散歩で会いました',
+            avatar: '🐕‍🦺',
+            groups: ['close-friends', 'park-friends']
         }
     ];
     
+    displayFriendsGrouped(sampleFriends);
+}
+
+// 友達をグループ分けして表示
+function displayFriendsGrouped(friends) {
     const friendsContainer = document.getElementById('friends-list');
     friendsContainer.innerHTML = '';
     
-    if (sampleFriends.length === 0) {
+    if (friends.length === 0) {
         friendsContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">まだ友達がいません<br>散歩で新しい友達を見つけましょう！</div>';
         return;
     }
     
-    sampleFriends.forEach(friend => {
-        const friendElement = document.createElement('div');
-        friendElement.className = 'dog-item';
-        friendElement.innerHTML = `
-            <div class="dog-avatar">${friend.avatar}</div>
-            <div class="dog-info">
-                <h4>${friend.ownerName} & ${friend.dogName}</h4>
-                <p>${friend.lastMet}</p>
-            </div>
-        `;
+    // フィルター適用
+    const filteredFriends = filterFriends(friends, currentFilter);
+    
+    if (currentFilter === 'all') {
+        // すべて表示の場合、グループ別に表示
+        const groupNames = {
+            'close-friends': '親しい友達',
+            'walking-buddies': '散歩仲間',
+            'park-friends': '公園友達',
+            'ungrouped': 'その他'
+        };
         
-        friendElement.addEventListener('click', () => {
-            alert(`${friend.ownerName}さんとのメッセージ機能は準備中です`);
+        const groupedFriends = {};
+        
+        // グループ別に分類
+        filteredFriends.forEach(friend => {
+            if (!friend.groups || friend.groups.length === 0) {
+                if (!groupedFriends['ungrouped']) groupedFriends['ungrouped'] = [];
+                groupedFriends['ungrouped'].push(friend);
+            } else {
+                friend.groups.forEach(group => {
+                    if (!groupedFriends[group]) groupedFriends[group] = [];
+                    if (!groupedFriends[group].includes(friend)) {
+                        groupedFriends[group].push(friend);
+                    }
+                });
+            }
         });
         
-        friendsContainer.appendChild(friendElement);
+        // グループごとに表示
+        Object.keys(groupedFriends).forEach(groupKey => {
+            const groupFriends = groupedFriends[groupKey];
+            if (groupFriends.length > 0) {
+                const groupSection = createGroupSection(groupNames[groupKey] || groupKey, groupFriends);
+                friendsContainer.appendChild(groupSection);
+            }
+        });
+    } else {
+        // 特定のグループの場合、そのまま表示
+        const groupName = getGroupDisplayName(currentFilter);
+        const groupSection = createGroupSection(groupName, filteredFriends);
+        friendsContainer.appendChild(groupSection);
+    }
+}
+
+// グループセクションを作成
+function createGroupSection(groupName, friends) {
+    const section = document.createElement('div');
+    section.className = 'group-section';
+    
+    section.innerHTML = `
+        <div class="group-header">
+            <div class="group-title">${groupName}</div>
+            <div class="group-count">${friends.length}</div>
+        </div>
+        <div class="group-friends"></div>
+    `;
+    
+    const groupFriendsContainer = section.querySelector('.group-friends');
+    
+    friends.forEach(friend => {
+        const friendElement = createFriendElement(friend);
+        groupFriendsContainer.appendChild(friendElement);
     });
+    
+    return section;
+}
+
+// 友達要素を作成（グループ管理ボタン付き）
+function createFriendElement(friend) {
+    const friendElement = document.createElement('div');
+    friendElement.className = 'dog-item';
+    friendElement.innerHTML = `
+        <div class="dog-avatar">${friend.avatar}</div>
+        <div class="dog-info">
+            <h4>${friend.ownerName} & ${friend.dogName}</h4>
+            <p>${friend.lastMet}</p>
+        </div>
+        <div class="friend-actions">
+            <button class="group-change-btn" onclick="showFriendGroupModal(${friend.id})">グループ</button>
+        </div>
+    `;
+    
+    // クリックでチャット開始（ボタン以外の部分）
+    friendElement.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('group-change-btn')) {
+            openChatWithFriend(friend);
+        }
+    });
+    
+    return friendElement;
+}
+
+// 友達をフィルター
+function filterFriends(friends, filter) {
+    if (filter === 'all') {
+        return friends;
+    }
+    
+    return friends.filter(friend => 
+        friend.groups && friend.groups.includes(filter)
+    );
+}
+
+// グループ表示名を取得
+function getGroupDisplayName(groupKey) {
+    const groupNames = {
+        'close-friends': '親しい友達',
+        'walking-buddies': '散歩仲間',
+        'park-friends': '公園友達'
+    };
+    return groupNames[groupKey] || groupKey;
+}
+
+// グループでフィルター
+function filterFriendsByGroup(group) {
+    currentFilter = group;
+    
+    // フィルターボタンの状態更新
+    document.querySelectorAll('.group-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-group="${group}"]`).classList.add('active');
+    
+    // 友達リストを再読み込み
+    loadFriends();
 }
 
 // 散歩履歴読み込み
@@ -1236,6 +1405,730 @@ window.forceFileDialog = function() {
         console.error('Avatar input not found');
     }
 };
+
+// メッセージ機能の実装
+
+// 会話リストを読み込み
+async function loadConversations() {
+    if (!currentUser) return;
+    
+    const conversationsContainer = document.getElementById('conversations-list');
+    conversationsContainer.innerHTML = '<div class="loading-message">会話を読み込み中...</div>';
+    
+    try {
+        // サンプルデータ（実際はFirestoreから取得）
+        const sampleConversations = [
+            {
+                id: 'user1',
+                name: '田中さん & ポチ',
+                avatar: '🐕',
+                lastMessage: 'また今度一緒に散歩しましょう！',
+                lastMessageTime: new Date(Date.now() - 1000 * 60 * 30), // 30分前
+                unread: true
+            },
+            {
+                id: 'user2', 
+                name: '佐藤さん & モコ',
+                avatar: '🐩',
+                lastMessage: 'ありがとうございました',
+                lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2時間前
+                unread: false
+            }
+        ];
+        
+        if (sampleConversations.length === 0) {
+            conversationsContainer.innerHTML = `
+                <div class="no-conversations">
+                    <h4>まだメッセージがありません</h4>
+                    <p>友達リストから新しい会話を始めましょう！</p>
+                </div>
+            `;
+            return;
+        }
+        
+        conversationsContainer.innerHTML = '';
+        sampleConversations.forEach(conversation => {
+            const conversationElement = createConversationElement(conversation);
+            conversationsContainer.appendChild(conversationElement);
+        });
+        
+    } catch (error) {
+        console.error('会話リスト読み込みエラー:', error);
+        conversationsContainer.innerHTML = '<div class="no-conversations"><h4>会話の読み込みに失敗しました</h4></div>';
+    }
+}
+
+// 会話要素を作成
+function createConversationElement(conversation) {
+    const conversationDiv = document.createElement('div');
+    conversationDiv.className = 'conversation-item';
+    
+    const timeString = formatConversationTime(conversation.lastMessageTime);
+    
+    conversationDiv.innerHTML = `
+        <div class="conversation-avatar">${conversation.avatar}</div>
+        <div class="conversation-info">
+            <div class="conversation-name">${conversation.name}</div>
+            <div class="conversation-last-message">${conversation.lastMessage}</div>
+        </div>
+        <div class="conversation-time">${timeString}</div>
+        ${conversation.unread ? '<div class="conversation-unread"></div>' : ''}
+    `;
+    
+    conversationDiv.addEventListener('click', () => {
+        openChat(conversation);
+    });
+    
+    return conversationDiv;
+}
+
+// 会話時刻をフォーマット
+function formatConversationTime(date) {
+    const now = new Date();
+    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+    
+    if (diffInMinutes < 1) {
+        return '今';
+    } else if (diffInMinutes < 60) {
+        return `${diffInMinutes}分前`;
+    } else if (diffInMinutes < 60 * 24) {
+        const hours = Math.floor(diffInMinutes / 60);
+        return `${hours}時間前`;
+    } else {
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+    }
+}
+
+// チャット画面を開く
+function openChat(conversation) {
+    currentChatUser = conversation;
+    
+    // チャット情報を設定
+    document.getElementById('chat-name').textContent = conversation.name;
+    document.getElementById('chat-avatar').src = conversation.avatar;
+    document.getElementById('chat-status').textContent = 'オンライン';
+    
+    // メッセージを読み込み
+    loadMessages(conversation.id);
+    
+    // チャット画面を表示
+    showChatView();
+}
+
+// 友達からチャットを開く
+function openChatWithFriend(friend) {
+    // メッセージタブに切り替え
+    switchTab('messages');
+    
+    // 友達の情報でチャットを開く
+    const conversation = {
+        id: friend.id,
+        name: `${friend.ownerName} & ${friend.dogName}`,
+        avatar: friend.avatar
+    };
+    
+    openChat(conversation);
+}
+
+// メッセージを読み込み
+async function loadMessages(conversationId) {
+    if (!currentUser) return;
+    
+    const chatMessages = document.getElementById('chat-messages');
+    chatMessages.innerHTML = '<div class="loading-message">メッセージを読み込み中...</div>';
+    
+    try {
+        // サンプルメッセージ（実際はFirestoreから取得）
+        const sampleMessages = [
+            {
+                id: '1',
+                text: 'こんにちは！今日は散歩日和ですね',
+                senderId: conversationId,
+                timestamp: new Date(Date.now() - 1000 * 60 * 60), // 1時間前
+                isOwn: false
+            },
+            {
+                id: '2', 
+                text: 'そうですね！近くの公園で一緒に散歩しませんか？',
+                senderId: currentUser.uid,
+                timestamp: new Date(Date.now() - 1000 * 60 * 50), // 50分前
+                isOwn: true
+            },
+            {
+                id: '3',
+                text: 'いいですね！2時頃はいかがですか？',
+                senderId: conversationId,
+                timestamp: new Date(Date.now() - 1000 * 60 * 40), // 40分前
+                isOwn: false
+            },
+            {
+                id: '4',
+                text: 'OKです！お待ちしています',
+                senderId: currentUser.uid,
+                timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30分前
+                isOwn: true
+            }
+        ];
+        
+        displayMessages(sampleMessages);
+        
+    } catch (error) {
+        console.error('メッセージ読み込みエラー:', error);
+        chatMessages.innerHTML = '<div class="no-messages">メッセージの読み込みに失敗しました</div>';
+    }
+}
+
+// メッセージを表示
+function displayMessages(messages) {
+    const chatMessages = document.getElementById('chat-messages');
+    chatMessages.innerHTML = '';
+    
+    if (messages.length === 0) {
+        chatMessages.innerHTML = '<div class="no-messages">まだメッセージがありません<br>最初のメッセージを送ってみましょう！</div>';
+        return;
+    }
+    
+    messages.forEach(message => {
+        const messageElement = createMessageElement(message);
+        chatMessages.appendChild(messageElement);
+    });
+    
+    // 最新メッセージまでスクロール
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// メッセージ要素を作成
+function createMessageElement(message) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message-item ${message.isOwn ? 'own' : ''}`;
+    
+    const timeString = formatTime(message.timestamp);
+    
+    messageDiv.innerHTML = `
+        <div class="message-bubble">
+            ${message.text}
+            <div class="message-time">${timeString}</div>
+        </div>
+    `;
+    
+    return messageDiv;
+}
+
+// メッセージを送信
+async function sendMessage() {
+    if (!currentUser || !currentChatUser) return;
+    
+    const messageInput = document.getElementById('message-input');
+    const messageText = messageInput.value.trim();
+    
+    if (!messageText) return;
+    
+    try {
+        // 送信ボタンを無効化
+        const sendBtn = document.getElementById('send-message');
+        sendBtn.disabled = true;
+        
+        // 入力欄をクリア
+        messageInput.value = '';
+        
+        // 新しいメッセージを画面に表示
+        const newMessage = {
+            id: Date.now().toString(),
+            text: messageText,
+            senderId: currentUser.uid,
+            timestamp: new Date(),
+            isOwn: true
+        };
+        
+        const messageElement = createMessageElement(newMessage);
+        const chatMessages = document.getElementById('chat-messages');
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Firestoreにメッセージを保存
+        await saveMessageToFirestore(currentChatUser.id, messageText);
+        
+        // 自動返信のシミュレーション（実際は相手が送信）
+        setTimeout(() => {
+            const replyMessage = {
+                id: (Date.now() + 1).toString(),
+                text: 'メッセージを受け取りました！',
+                senderId: currentChatUser.id,
+                timestamp: new Date(),
+                isOwn: false
+            };
+            
+            const replyElement = createMessageElement(replyMessage);
+            chatMessages.appendChild(replyElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 1000);
+        
+    } catch (error) {
+        console.error('メッセージ送信エラー:', error);
+        alert('メッセージの送信に失敗しました');
+    } finally {
+        // 送信ボタンを有効化
+        document.getElementById('send-message').disabled = false;
+    }
+}
+
+// メッセージリスト画面を表示
+function showMessagesList() {
+    document.getElementById('message-list-view').classList.remove('hidden');
+    document.getElementById('message-chat-view').classList.add('hidden');
+}
+
+// チャット画面を表示
+function showChatView() {
+    document.getElementById('message-list-view').classList.add('hidden');
+    document.getElementById('message-chat-view').classList.remove('hidden');
+}
+
+// メッセージリストに戻る
+function backToMessagesList() {
+    showMessagesList();
+    currentChatUser = null;
+    
+    // メッセージリアルタイム監視を停止
+    if (messagesListener) {
+        messagesListener();
+        messagesListener = null;
+    }
+}
+
+// Firestore メッセージデータ構造の実装
+
+// メッセージをFirestoreに保存
+async function saveMessageToFirestore(receiverId, messageText) {
+    if (!currentUser) return;
+    
+    try {
+        const messageData = {
+            senderId: currentUser.uid,
+            receiverId: receiverId,
+            text: messageText,
+            timestamp: serverTimestamp(),
+            read: false
+        };
+        
+        // メッセージをmessagesコレクションに保存
+        const messagesRef = collection(db, 'messages');
+        await addDoc(messagesRef, messageData);
+        
+        // 会話を更新または作成
+        await updateConversation(receiverId, messageText);
+        
+        console.log('メッセージがFirestoreに保存されました');
+        
+    } catch (error) {
+        console.error('メッセージ保存エラー:', error);
+        throw error;
+    }
+}
+
+// 会話情報を更新
+async function updateConversation(receiverId, lastMessage) {
+    if (!currentUser) return;
+    
+    try {
+        // 会話IDを生成（送信者と受信者のUIDを組み合わせて一意のIDを作成）
+        const conversationId = [currentUser.uid, receiverId].sort().join('_');
+        
+        const conversationData = {
+            participants: [currentUser.uid, receiverId],
+            lastMessage: lastMessage,
+            lastMessageTime: serverTimestamp(),
+            lastMessageSender: currentUser.uid,
+            updatedAt: serverTimestamp()
+        };
+        
+        // conversationsコレクションに保存（存在しない場合は作成）
+        const conversationRef = doc(db, 'conversations', conversationId);
+        await setDoc(conversationRef, conversationData, { merge: true });
+        
+    } catch (error) {
+        console.error('会話更新エラー:', error);
+    }
+}
+
+// Firestoreからメッセージを読み込み（リアルタイム）
+async function loadMessagesFromFirestore(conversationId) {
+    if (!currentUser) return;
+    
+    try {
+        const messagesRef = collection(db, 'messages');
+        const q = query(
+            messagesRef,
+            where('senderId', 'in', [currentUser.uid, conversationId]),
+            where('receiverId', 'in', [currentUser.uid, conversationId]),
+            orderBy('timestamp', 'asc'),
+            limit(100)
+        );
+        
+        // リアルタイム監視を設定
+        messagesListener = onSnapshot(q, (snapshot) => {
+            const messages = [];
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                // 送信者と受信者が現在のユーザーまたは対話相手である場合のみ追加
+                if ((data.senderId === currentUser.uid && data.receiverId === conversationId) ||
+                    (data.senderId === conversationId && data.receiverId === currentUser.uid)) {
+                    messages.push({
+                        id: doc.id,
+                        text: data.text,
+                        senderId: data.senderId,
+                        timestamp: data.timestamp?.toDate() || new Date(),
+                        isOwn: data.senderId === currentUser.uid
+                    });
+                }
+            });
+            
+            displayMessages(messages);
+        });
+        
+    } catch (error) {
+        console.error('Firestoreメッセージ読み込みエラー:', error);
+        // エラーの場合はサンプルデータを表示
+        loadMessages(conversationId);
+    }
+}
+
+// Firestoreから会話リストを読み込み
+async function loadConversationsFromFirestore() {
+    if (!currentUser) return;
+    
+    try {
+        const conversationsRef = collection(db, 'conversations');
+        const q = query(
+            conversationsRef,
+            where('participants', 'array-contains', currentUser.uid),
+            orderBy('lastMessageTime', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const conversations = [];
+        
+        for (const doc of querySnapshot.docs) {
+            const data = doc.data();
+            const otherUserId = data.participants.find(id => id !== currentUser.uid);
+            
+            // 相手のユーザー情報を取得
+            const otherUserDoc = await getDoc(doc(db, 'users', otherUserId));
+            if (otherUserDoc.exists()) {
+                const otherUserData = otherUserDoc.data();
+                conversations.push({
+                    id: otherUserId,
+                    name: `${otherUserData.userName || 'ユーザー'} & ${otherUserData.dogName || '愛犬'}`,
+                    avatar: otherUserData.avatarBase64 || '🐕',
+                    lastMessage: data.lastMessage,
+                    lastMessageTime: data.lastMessageTime?.toDate() || new Date(),
+                    unread: data.lastMessageSender !== currentUser.uid // 相手が最後に送信した場合は未読
+                });
+            }
+        }
+        
+        return conversations;
+        
+    } catch (error) {
+        console.error('Firestore会話リスト読み込みエラー:', error);
+        return [];
+    }
+}
+
+// 会話リストを読み込み（Firestoreとサンプルデータの統合版）
+async function loadConversations() {
+    if (!currentUser) return;
+    
+    const conversationsContainer = document.getElementById('conversations-list');
+    conversationsContainer.innerHTML = '<div class="loading-message">会話を読み込み中...</div>';
+    
+    try {
+        // まずFirestoreから読み込みを試行
+        let conversations = await loadConversationsFromFirestore();
+        
+        // Firestoreにデータがない場合はサンプルデータを表示
+        if (conversations.length === 0) {
+            conversations = [
+                {
+                    id: 'user1',
+                    name: '田中さん & ポチ',
+                    avatar: '🐕',
+                    lastMessage: 'また今度一緒に散歩しましょう！',
+                    lastMessageTime: new Date(Date.now() - 1000 * 60 * 30),
+                    unread: true
+                },
+                {
+                    id: 'user2', 
+                    name: '佐藤さん & モコ',
+                    avatar: '🐩',
+                    lastMessage: 'ありがとうございました',
+                    lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 2),
+                    unread: false
+                }
+            ];
+        }
+        
+        if (conversations.length === 0) {
+            conversationsContainer.innerHTML = `
+                <div class="no-conversations">
+                    <h4>まだメッセージがありません</h4>
+                    <p>友達リストから新しい会話を始めましょう！</p>
+                </div>
+            `;
+            return;
+        }
+        
+        conversationsContainer.innerHTML = '';
+        conversations.forEach(conversation => {
+            const conversationElement = createConversationElement(conversation);
+            conversationsContainer.appendChild(conversationElement);
+        });
+        
+    } catch (error) {
+        console.error('会話リスト読み込みエラー:', error);
+        conversationsContainer.innerHTML = '<div class="no-conversations"><h4>会話の読み込みに失敗しました</h4></div>';
+    }
+}
+
+// メッセージを読み込み（Firestoreとサンプルデータの統合版）
+async function loadMessages(conversationId) {
+    if (!currentUser) return;
+    
+    const chatMessages = document.getElementById('chat-messages');
+    chatMessages.innerHTML = '<div class="loading-message">メッセージを読み込み中...</div>';
+    
+    try {
+        // Firestoreからリアルタイム読み込みを試行
+        await loadMessagesFromFirestore(conversationId);
+        
+    } catch (error) {
+        console.error('メッセージ読み込みエラー:', error);
+        
+        // エラーの場合はサンプルデータを表示
+        const sampleMessages = [
+            {
+                id: '1',
+                text: 'こんにちは！今日は散歩日和ですね',
+                senderId: conversationId,
+                timestamp: new Date(Date.now() - 1000 * 60 * 60),
+                isOwn: false
+            },
+            {
+                id: '2', 
+                text: 'そうですね！近くの公園で一緒に散歩しませんか？',
+                senderId: currentUser.uid,
+                timestamp: new Date(Date.now() - 1000 * 60 * 50),
+                isOwn: true
+            }
+        ];
+        
+        displayMessages(sampleMessages);
+    }
+}
+
+// 友達グループ管理機能
+
+// グループ管理モーダルを表示
+function showGroupManagementModal() {
+    document.getElementById('group-management-modal').classList.remove('hidden');
+    loadExistingGroups();
+}
+
+// グループ管理モーダルを非表示
+function hideGroupManagementModal() {
+    document.getElementById('group-management-modal').classList.add('hidden');
+}
+
+// 既存のグループを読み込み
+function loadExistingGroups() {
+    const existingGroupsContainer = document.getElementById('existing-groups');
+    existingGroupsContainer.innerHTML = '';
+    
+    const groupNames = {
+        'close-friends': '親しい友達',
+        'walking-buddies': '散歩仲間',
+        'park-friends': '公園友達'
+    };
+    
+    currentGroups.forEach(groupKey => {
+        const groupItem = document.createElement('div');
+        groupItem.className = 'group-item';
+        groupItem.innerHTML = `
+            <div class="existing-group-item">
+                <span class="existing-group-name">${groupNames[groupKey] || groupKey}</span>
+                <button class="delete-group-btn" onclick="deleteGroup('${groupKey}')">削除</button>
+            </div>
+        `;
+        existingGroupsContainer.appendChild(groupItem);
+    });
+}
+
+// 新しいグループを追加
+function addNewGroup() {
+    const input = document.querySelector('.group-name-input');
+    const groupName = input.value.trim();
+    
+    if (!groupName) {
+        alert('グループ名を入力してください');
+        return;
+    }
+    
+    // グループIDを生成（日本語名から英語キーを作成）
+    const groupKey = 'custom-' + Date.now();
+    
+    // グループを追加
+    currentGroups.push(groupKey);
+    
+    // フィルターボタンを追加
+    addGroupFilterButton(groupKey, groupName);
+    
+    // 入力欄をクリア
+    input.value = '';
+    
+    // 既存グループリストを更新
+    loadExistingGroups();
+    
+    // Firestoreに保存（実装予定）
+    console.log('新しいグループを追加:', groupName, groupKey);
+}
+
+// グループを削除
+function deleteGroup(groupKey) {
+    if (confirm('このグループを削除しますか？\n（友達の関連付けも解除されます）')) {
+        // グループを削除
+        currentGroups = currentGroups.filter(g => g !== groupKey);
+        
+        // フィルターボタンを削除
+        const filterBtn = document.querySelector(`[data-group="${groupKey}"]`);
+        if (filterBtn) {
+            filterBtn.remove();
+        }
+        
+        // 現在のフィルターが削除されたグループの場合、「すべて」に戻す
+        if (currentFilter === groupKey) {
+            filterFriendsByGroup('all');
+        }
+        
+        // 既存グループリストを更新
+        loadExistingGroups();
+        
+        // 友達リストを再読み込み
+        loadFriends();
+        
+        console.log('グループを削除:', groupKey);
+    }
+}
+
+// グループフィルターボタンを追加
+function addGroupFilterButton(groupKey, groupName) {
+    const filtersContainer = document.querySelector('.group-filters');
+    const button = document.createElement('button');
+    button.className = 'group-filter-btn';
+    button.dataset.group = groupKey;
+    button.textContent = groupName;
+    
+    button.addEventListener('click', (e) => {
+        const group = e.target.dataset.group;
+        filterFriendsByGroup(group);
+    });
+    
+    filtersContainer.appendChild(button);
+}
+
+// 友達のグループ変更モーダルを表示
+function showFriendGroupModal(friendId) {
+    // 友達データを取得（サンプルデータから）
+    const sampleFriends = [
+        { id: 1, ownerName: '田中さん', dogName: 'ポチ', avatar: '🐕', groups: ['close-friends', 'walking-buddies'] },
+        { id: 2, ownerName: '佐藤さん', dogName: 'モコ', avatar: '🐩', groups: ['walking-buddies'] },
+        { id: 3, ownerName: '鈴木さん', dogName: 'ラブ', avatar: '🦮', groups: ['park-friends'] },
+        { id: 4, ownerName: '山田さん', dogName: 'チョコ', avatar: '🐕‍🦺', groups: ['close-friends', 'park-friends'] }
+    ];
+    
+    selectedFriend = sampleFriends.find(f => f.id === friendId);
+    if (!selectedFriend) return;
+    
+    // モーダル情報を設定
+    document.getElementById('selected-friend-avatar').textContent = selectedFriend.avatar;
+    document.getElementById('selected-friend-name').textContent = `${selectedFriend.ownerName} & ${selectedFriend.dogName}`;
+    
+    // グループチェックボックスを生成
+    const checkboxContainer = document.getElementById('group-checkboxes');
+    checkboxContainer.innerHTML = '';
+    
+    const groupNames = {
+        'close-friends': '親しい友達',
+        'walking-buddies': '散歩仲間',
+        'park-friends': '公園友達'
+    };
+    
+    currentGroups.forEach(groupKey => {
+        const checkboxItem = document.createElement('div');
+        checkboxItem.className = 'group-checkbox-item';
+        
+        const isChecked = selectedFriend.groups && selectedFriend.groups.includes(groupKey);
+        
+        checkboxItem.innerHTML = `
+            <input type="checkbox" id="group-${groupKey}" ${isChecked ? 'checked' : ''}>
+            <label for="group-${groupKey}" class="group-checkbox-label">${groupNames[groupKey] || groupKey}</label>
+        `;
+        
+        checkboxContainer.appendChild(checkboxItem);
+    });
+    
+    // モーダルを表示
+    document.getElementById('friend-group-modal').classList.remove('hidden');
+}
+
+// 友達のグループ変更モーダルを非表示
+function hideFriendGroupModal() {
+    document.getElementById('friend-group-modal').classList.add('hidden');
+    selectedFriend = null;
+}
+
+// 友達のグループ設定を保存
+function saveFriendGroups() {
+    if (!selectedFriend) return;
+    
+    // チェックされたグループを取得
+    const checkedGroups = [];
+    currentGroups.forEach(groupKey => {
+        const checkbox = document.getElementById(`group-${groupKey}`);
+        if (checkbox && checkbox.checked) {
+            checkedGroups.push(groupKey);
+        }
+    });
+    
+    // 友達のグループを更新（実際はFirestoreに保存）
+    selectedFriend.groups = checkedGroups;
+    
+    console.log('友達のグループを更新:', selectedFriend.ownerName, checkedGroups);
+    
+    // モーダルを閉じる
+    hideFriendGroupModal();
+    
+    // 友達リストを再読み込み
+    loadFriends();
+    
+    alert('グループ設定を保存しました！');
+}
+
+// Firestoreでグループデータ構造を実装（実装予定）
+async function saveGroupsToFirestore() {
+    // TODO: Firestoreにグループ設定を保存
+}
+
+async function loadGroupsFromFirestore() {
+    // TODO: Firestoreからグループ設定を読み込み
+}
+
+async function saveFriendGroupsToFirestore(friendId, groups) {
+    // TODO: Firestoreに友達のグループ設定を保存
+}
+
+// グローバル関数として定義（onclick属性から呼び出し可能にする）
+window.showFriendGroupModal = showFriendGroupModal;
+window.deleteGroup = deleteGroup;
 
 // アプリ初期化を実行（DOMContentLoadedで既に実行されるため削除）
 // initializeAppAuth(); // 重複削除
