@@ -318,8 +318,8 @@ function showMainApp() {
         });
     }
     
-    // 位置情報取得とマップ初期化
-    getCurrentLocation();
+    // ロケーションマッチング機能初期化
+    initializeLocationMatching();
 }
 
 // タブ切り替え
@@ -2161,9 +2161,244 @@ async function saveFriendGroupsToFirestore(friendId, groups) {
     // TODO: Firestoreに友達のグループ設定を保存
 }
 
+// ロケーションマッチング機能初期化
+function initializeLocationMatching() {
+    console.log('Location matching system initialized');
+    
+    // 位置選択のイベントリスナー
+    const locationSelect = document.getElementById('location-select');
+    if (locationSelect) {
+        locationSelect.addEventListener('change', handleLocationChange);
+    }
+    
+    // リフレッシュボタン
+    const refreshLocationBtn = document.getElementById('refresh-location');
+    if (refreshLocationBtn) {
+        refreshLocationBtn.addEventListener('click', refreshLocationData);
+    }
+    
+    // ロケーションタブ切り替え
+    const locationTabs = document.querySelectorAll('.location-tab');
+    locationTabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            switchLocationTab(e.target.dataset.type);
+        });
+    });
+    
+    // チェックイン・チェックアウトボタン
+    const checkInBtn = document.getElementById('check-in-btn');
+    const checkOutBtn = document.getElementById('check-out-btn');
+    if (checkInBtn) {
+        checkInBtn.addEventListener('click', handleCheckIn);
+    }
+    if (checkOutBtn) {
+        checkOutBtn.addEventListener('click', handleCheckOut);
+    }
+    
+    // 初期データ読み込み
+    loadLocationData();
+}
+
+// 位置変更ハンドラー
+function handleLocationChange() {
+    const locationSelect = document.getElementById('location-select');
+    const selectedLocation = locationSelect.value;
+    const selectedText = locationSelect.options[locationSelect.selectedIndex].text;
+    
+    // 現在位置表示を更新
+    document.getElementById('current-location-name').textContent = selectedText;
+    
+    console.log('Location changed to:', selectedLocation);
+    loadLocationData(selectedLocation);
+}
+
+// 位置データリフレッシュ
+function refreshLocationData() {
+    const locationSelect = document.getElementById('location-select');
+    const selectedLocation = locationSelect.value;
+    
+    // リフレッシュボタンにアニメーション追加
+    const refreshBtn = document.getElementById('refresh-location');
+    refreshBtn.style.transform = 'rotate(360deg)';
+    setTimeout(() => {
+        refreshBtn.style.transform = 'rotate(0deg)';
+    }, 500);
+    
+    console.log('Refreshing location data for:', selectedLocation);
+    loadLocationData(selectedLocation);
+}
+
+// ロケーションタブ切り替え
+function switchLocationTab(type) {
+    // タブのアクティブ状態を更新
+    document.querySelectorAll('.location-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelector(`[data-type="${type}"]`).classList.add('active');
+    
+    console.log('Switched to location tab:', type);
+    loadPeopleByType(type);
+}
+
+// タイプ別の人を読み込み
+function loadPeopleByType(type) {
+    const locationPeople = document.getElementById('location-people');
+    
+    // サンプルデータ
+    const peopleData = {
+        park: [
+            { id: 1, name: '田中さん', dogName: 'ポチ', avatar: '🐕', status: '公園で休憩中', distance: '10m', checkInTime: '15分前' },
+            { id: 2, name: '佐藤さん', dogName: 'モコ', avatar: '🐩', status: 'ベンチで待機', distance: '25m', checkInTime: '8分前' },
+            { id: 3, name: '山田さん', dogName: 'チョコ', avatar: '🐕‍🦺', status: 'ドッグランにいます', distance: '50m', checkInTime: '3分前' }
+        ],
+        walking: [
+            { id: 4, name: '鈴木さん', dogName: 'ラブ', avatar: '🦮', status: '散歩中', distance: '100m', checkInTime: '12分前', walkingRoute: '公園周回コース' },
+            { id: 5, name: '高橋さん', dogName: 'ハチ', avatar: '🐕', status: '散歩中', distance: '200m', checkInTime: '20分前', walkingRoute: '川沿いコース' }
+        ],
+        nearby: [
+            { id: 6, name: '伊藤さん', dogName: 'マル', avatar: '🐩', status: 'オンライン', distance: '300m', checkInTime: '5分前' },
+            { id: 7, name: '渡辺さん', dogName: 'シロ', avatar: '🐕', status: 'オンライン', distance: '450m', checkInTime: '1分前' },
+            { id: 8, name: '中村さん', dogName: 'クロ', avatar: '🦮', status: 'オンライン', distance: '500m', checkInTime: '7分前' }
+        ]
+    };
+    
+    const people = peopleData[type] || [];
+    
+    locationPeople.innerHTML = people.map(person => `
+        <div class="person-item" data-person-id="${person.id}">
+            <div class="person-avatar">${person.avatar}</div>
+            <div class="person-info">
+                <div class="person-name">${person.name} & ${person.dogName}</div>
+                <div class="person-status">${person.status}</div>
+                ${person.walkingRoute ? `<div class="walking-route">📍 ${person.walkingRoute}</div>` : ''}
+            </div>
+            <div class="person-meta">
+                <div class="person-distance">${person.distance}</div>
+                <div class="person-time">${person.checkInTime}</div>
+                <button class="message-person-btn" onclick="startChatWithPerson(${person.id})">💬</button>
+            </div>
+        </div>
+    `).join('');
+    
+    // 人数を更新
+    document.getElementById('people-count').textContent = `${people.length}人`;
+}
+
+// 位置データ読み込み
+function loadLocationData(location = 'shibuya-park') {
+    console.log('Loading location data for:', location);
+    
+    // 現在のタブタイプを取得
+    const activeTab = document.querySelector('.location-tab.active');
+    const currentType = activeTab ? activeTab.dataset.type : 'park';
+    
+    // データを読み込み
+    loadPeopleByType(currentType);
+    
+    // 最終更新時間を更新
+    const now = new Date();
+    const timeStr = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+    document.getElementById('last-update').textContent = `${timeStr} 更新`;
+}
+
+// チェックイン処理
+async function handleCheckIn() {
+    if (!currentUser) {
+        alert('ログインが必要です');
+        return;
+    }
+    
+    const locationSelect = document.getElementById('location-select');
+    const selectedLocation = locationSelect.value;
+    const locationName = locationSelect.options[locationSelect.selectedIndex].text;
+    
+    try {
+        // Firestoreにチェックイン情報を保存
+        const checkInData = {
+            userId: currentUser.uid,
+            userName: currentUser.displayName,
+            location: selectedLocation,
+            locationName: locationName,
+            checkInTime: serverTimestamp(),
+            status: 'checked-in'
+        };
+        
+        await addDoc(collection(db, 'location_checkins'), checkInData);
+        
+        // UI更新
+        document.getElementById('check-in-btn').classList.add('hidden');
+        document.getElementById('check-out-btn').classList.remove('hidden');
+        
+        console.log('Checked in to:', locationName);
+        alert(`${locationName}にチェックインしました！`);
+        
+        // データを再読み込み
+        refreshLocationData();
+        
+    } catch (error) {
+        console.error('Check-in error:', error);
+        alert('チェックインに失敗しました');
+    }
+}
+
+// チェックアウト処理
+async function handleCheckOut() {
+    if (!currentUser) {
+        alert('ログインが必要です');
+        return;
+    }
+    
+    try {
+        // 現在のチェックイン記録を検索してチェックアウト時間を追加
+        const checkInsQuery = query(
+            collection(db, 'location_checkins'),
+            where('userId', '==', currentUser.uid),
+            where('status', '==', 'checked-in'),
+            orderBy('checkInTime', 'desc'),
+            limit(1)
+        );
+        
+        const querySnapshot = await getDocs(checkInsQuery);
+        if (!querySnapshot.empty) {
+            const checkInDoc = querySnapshot.docs[0];
+            await updateDoc(checkInDoc.ref, {
+                checkOutTime: serverTimestamp(),
+                status: 'checked-out'
+            });
+        }
+        
+        // UI更新
+        document.getElementById('check-out-btn').classList.add('hidden');
+        document.getElementById('check-in-btn').classList.remove('hidden');
+        
+        console.log('Checked out successfully');
+        alert('チェックアウトしました');
+        
+        // データを再読み込み
+        refreshLocationData();
+        
+    } catch (error) {
+        console.error('Check-out error:', error);
+        alert('チェックアウトに失敗しました');
+    }
+}
+
+// 人とのチャット開始
+function startChatWithPerson(personId) {
+    console.log('Starting chat with person:', personId);
+    
+    // メッセージタブに切り替え
+    switchTab('messages');
+    
+    // 該当する人とのチャットを開始（実装は既存のメッセージ機能を使用）
+    // TODO: 実際のユーザーIDでチャットを開始する処理を追加
+    alert('この機能は開発中です。近日中に実装予定です！');
+}
+
 // グローバル関数として定義（onclick属性から呼び出し可能にする）
 window.showFriendGroupModal = showFriendGroupModal;
 window.deleteGroup = deleteGroup;
+window.startChatWithPerson = startChatWithPerson;
 
 // アプリ初期化を実行（DOMContentLoadedで既に実行されるため削除）
 // initializeAppAuth(); // 重複削除

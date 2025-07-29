@@ -59,24 +59,50 @@
             <!-- マップタブ -->
             <div id="map-tab" class="tab-content active">
                 <div class="content">
-                    <div class="map-container">
-                        <div id="map"></div>
-                        <div id="map-placeholder" class="map-placeholder">
-                            <div class="placeholder-content">
-                                <div class="placeholder-icon">🗺️</div>
-                                <h4>マップ機能</h4>
-                                <p>現在位置とおすすめ散歩コースを表示</p>
-                                <div class="placeholder-features">
-                                    <div class="feature-item">📍 現在位置の表示</div>
-                                    <div class="feature-item">🏞️ 近くの公園情報</div>
-                                    <div class="feature-item">🚶‍♂️ 散歩コースの提案</div>
-                                </div>
-                                <small>※ 現在準備中です</small>
+                    <div class="location-matching">
+                        <div class="location-header">
+                            <h3>🐕 近くの散歩仲間を探す</h3>
+                            <div class="location-selector">
+                                <select id="location-select">
+                                    <option value="shibuya-park">渋谷公園</option>
+                                    <option value="yoyogi-park">代々木公園</option>
+                                    <option value="ueno-park">上野公園</option>
+                                    <option value="inokashira-park">井の頭公園</option>
+                                    <option value="komazawa-park">駒沢オリンピック公園</option>
+                                    <option value="shinjuku-central-park">新宿中央公园</option>
+                                </select>
+                                <button id="refresh-location" class="refresh-btn">🔄</button>
                             </div>
                         </div>
-                        <div id="map-loading" class="map-loading hidden">
-                            <div class="loading"></div>
-                            <p>マップを読み込み中...</p>
+
+                        <div class="current-location-status">
+                            <div class="status-item">
+                                <span class="status-icon">📍</span>
+                                <span class="status-text">現在地: <strong id="current-location-name">渋谷公園</strong></span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-icon">👥</span>
+                                <span class="status-text">この場所にいる人: <strong id="people-count">4人</strong></span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-icon">🕐</span>
+                                <span class="status-text">最終更新: <strong id="last-update">2分前</strong></span>
+                            </div>
+                        </div>
+
+                        <div class="location-tabs">
+                            <button class="location-tab active" data-type="park">🏞️ 公園にいる人</button>
+                            <button class="location-tab" data-type="walking">🚶‍♂️ 散歩中の人</button>
+                            <button class="location-tab" data-type="nearby">📍 近くの人</button>
+                        </div>
+
+                        <div id="location-people" class="location-people">
+                            <!-- 動的に人が追加されます -->
+                        </div>
+
+                        <div class="check-in-section">
+                            <button id="check-in-btn" class="check-in-btn">📍 この場所にチェックイン</button>
+                            <button id="check-out-btn" class="check-out-btn hidden">❌ チェックアウト</button>
                         </div>
                     </div>
                     
