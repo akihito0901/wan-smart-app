@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>わんスマート - 犬の散歩・ソーシャルアプリ</title>
     <link rel="stylesheet" href="css/style.css">
+    <!-- Leaflet CSS for OpenStreetMap -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Google Identity Services removed - using Firebase Auth instead -->
     <!-- Google Maps JavaScript API - Temporarily disabled due to billing -->
     <!-- <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBu63l8Orqplq2EnLTkigilHQBeBpVvXLc&callback=initMap"></script> -->
@@ -14,6 +16,8 @@
     <!-- Firebase Storage は Base64 を使用するため不要 -->
     <!-- <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script> -->
     <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js"></script>
+    <!-- Leaflet JavaScript for OpenStreetMap -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
     <div class="container">
@@ -59,6 +63,15 @@
             <!-- マップタブ -->
             <div id="map-tab" class="tab-content active">
                 <div class="content">
+                    <!-- 無料マップ（OpenStreetMap with Leaflet） -->
+                    <div class="map-container">
+                        <div id="leaflet-map" class="map"></div>
+                        <div class="map-controls">
+                            <button id="center-map-btn" class="map-control-btn">📍 現在地</button>
+                            <button id="toggle-map-btn" class="map-control-btn">🗺️ 表示切替</button>
+                        </div>
+                    </div>
+                    
                     <div class="location-matching">
                         <div class="location-header">
                             <h3>🐕 近くの散歩仲間を探す</h3>

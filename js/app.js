@@ -33,7 +33,8 @@ try {
 
 // グローバル変数
 let currentUser = null;
-let map = null;
+let map = null; // Google Maps（無効）
+let leafletMap = null; // Leaflet Map（OpenStreetMap）
 let userLocation = null;
 let walkData = null; // 散歩中のデータ
 let currentChatUser = null; // 現在チャット中のユーザー
@@ -41,6 +42,7 @@ let messagesListener = null; // メッセージリアルタイム監視
 let currentGroups = ['close-friends', 'walking-buddies', 'park-friends']; // デフォルトグループ
 let selectedFriend = null; // 選択された友達（グループ変更用）
 let currentFilter = 'all'; // 現在のフィルター
+let mapToggled = false; // マップ表示切替状態
 
 // DOM要素
 const loginScreen = document.getElementById('login-screen');
@@ -332,12 +334,12 @@ function switchTab(tabName) {
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     document.getElementById(`${tabName}-tab`).classList.add('active');
     
-    // マップタブの場合、マップを再初期化
-    if (tabName === 'map' && map && typeof google !== 'undefined' && google.maps) {
+    // マップタブの場合、Leafletマップサイズを再調整
+    if (tabName === 'map' && leafletMap) {
         setTimeout(() => {
-            google.maps.event.trigger(map, 'resize');
+            leafletMap.invalidateSize();
             if (userLocation) {
-                map.setCenter(userLocation);
+                leafletMap.setView([userLocation.lat, userLocation.lng], 15);
             }
         }, 100);
     }
@@ -2165,6 +2167,9 @@ async function saveFriendGroupsToFirestore(friendId, groups) {
 function initializeLocationMatching() {
     console.log('Location matching system initialized');
     
+    // Leafletマップ初期化
+    initializeLeafletMap();
+    
     // 位置選択のイベントリスナー
     const locationSelect = document.getElementById('location-select');
     if (locationSelect) {
@@ -2175,6 +2180,16 @@ function initializeLocationMatching() {
     const refreshLocationBtn = document.getElementById('refresh-location');
     if (refreshLocationBtn) {
         refreshLocationBtn.addEventListener('click', refreshLocationData);
+    }
+    
+    // マップコントロールボタン
+    const centerMapBtn = document.getElementById('center-map-btn');
+    const toggleMapBtn = document.getElementById('toggle-map-btn');
+    if (centerMapBtn) {
+        centerMapBtn.addEventListener('click', centerMapToUser);
+    }
+    if (toggleMapBtn) {
+        toggleMapBtn.addEventListener('click', toggleMapVisibility);
     }
     
     // ロケーションタブ切り替え
@@ -2395,10 +2410,172 @@ function startChatWithPerson(personId) {
     alert('この機能は開発中です。近日中に実装予定です！');
 }
 
+// Leafletマップ初期化（無料のOpenStreetMap）
+function initializeLeafletMap() {
+    console.log('Initializing Leaflet map...');
+    
+    try {
+        // マップコンテナの存在確認
+        const mapContainer = document.getElementById('leaflet-map');
+        if (!mapContainer) {
+            console.error('Map container not found');
+            return;
+        }
+        
+        // 東京駅を中心とした初期表示
+        const defaultLocation = [35.6812, 139.7671];
+        
+        // Leafletマップを初期化
+        leafletMap = L.map('leaflet-map').setView(defaultLocation, 13);
+        
+        // OpenStreetMapタイルレイヤーを追加
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(leafletMap);
+        
+        // ユーザーの現在位置を取得してマップに表示
+        getCurrentLocationForMap();
+        
+        // 主要な公園にマーカーを追加
+        addParkMarkers();
+        
+        console.log('Leaflet map initialized successfully');
+        
+    } catch (error) {
+        console.error('Failed to initialize Leaflet map:', error);
+    }
+}
+
+// 現在位置取得（マップ用）
+function getCurrentLocationForMap() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                userLocation = { lat, lng };
+                
+                console.log('User location obtained:', userLocation);
+                
+                // マップの中心を現在位置に移動
+                if (leafletMap) {
+                    leafletMap.setView([lat, lng], 15);
+                    
+                    // 現在位置にマーカーを追加
+                    const userMarker = L.marker([lat, lng])
+                        .addTo(leafletMap)
+                        .bindPopup('🐕 あなたの現在位置')
+                        .openPopup();
+                    
+                    // マーカーのアイコンをカスタマイズ
+                    userMarker.setIcon(L.divIcon({
+                        html: '🐕',
+                        className: 'custom-marker',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    }));
+                }
+            },
+            (error) => {
+                console.error('位置情報取得エラー:', error);
+                // エラー時はデフォルト位置を使用
+                userLocation = { lat: 35.6812, lng: 139.7671 };
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 300000
+            }
+        );
+    }
+}
+
+// 公園マーカーを追加
+function addParkMarkers() {
+    if (!leafletMap) return;
+    
+    const parks = [
+        { name: '渋谷公園', lat: 35.6586, lng: 139.7016, people: 4 },
+        { name: '代々木公園', lat: 35.6732, lng: 139.6940, people: 8 },
+        { name: '上野公園', lat: 35.7148, lng: 139.7734, people: 12 },
+        { name: '井の頭公園', lat: 35.7004, lng: 139.5802, people: 6 },
+        { name: '駒沢オリンピック公園', lat: 35.6298, lng: 139.6566, people: 3 },
+        { name: '新宿中央公园', lat: 35.6899, lng: 139.6935, people: 7 }
+    ];
+    
+    parks.forEach(park => {
+        const marker = L.marker([park.lat, park.lng])
+            .addTo(leafletMap)
+            .bindPopup(`
+                <div class="park-popup">
+                    <h4>🏞️ ${park.name}</h4>
+                    <p>👥 ${park.people}人がチェックイン中</p>
+                    <button onclick="selectParkFromMap('${park.name}')" class="park-select-btn">
+                        この公園を選択
+                    </button>
+                </div>
+            `);
+        
+        // 公園マーカーのアイコンをカスタマイズ
+        marker.setIcon(L.divIcon({
+            html: '🏞️',
+            className: 'park-marker',
+            iconSize: [25, 25],
+            iconAnchor: [12, 12]
+        }));
+    });
+}
+
+// マップから公園を選択
+function selectParkFromMap(parkName) {
+    const locationSelect = document.getElementById('location-select');
+    const options = Array.from(locationSelect.options);
+    const option = options.find(opt => opt.text === parkName);
+    
+    if (option) {
+        locationSelect.value = option.value;
+        handleLocationChange();
+    }
+}
+
+// マップを現在位置に中央揃え
+function centerMapToUser() {
+    if (leafletMap && userLocation) {
+        leafletMap.setView([userLocation.lat, userLocation.lng], 15);
+        console.log('Map centered to user location');
+    } else {
+        // 現在位置を再取得
+        getCurrentLocationForMap();
+    }
+}
+
+// マップ表示切り替え
+function toggleMapVisibility() {
+    const mapTab = document.getElementById('map-tab');
+    mapToggled = !mapToggled;
+    
+    if (mapToggled) {
+        mapTab.classList.add('map-toggle-hidden');
+        document.getElementById('toggle-map-btn').textContent = '🗺️ 表示';
+    } else {
+        mapTab.classList.remove('map-toggle-hidden');
+        document.getElementById('toggle-map-btn').textContent = '🗺️ 非表示';
+        
+        // マップサイズを再調整
+        setTimeout(() => {
+            if (leafletMap) {
+                leafletMap.invalidateSize();
+            }
+        }, 300);
+    }
+}
+
 // グローバル関数として定義（onclick属性から呼び出し可能にする）
 window.showFriendGroupModal = showFriendGroupModal;
 window.deleteGroup = deleteGroup;
 window.startChatWithPerson = startChatWithPerson;
+window.selectParkFromMap = selectParkFromMap;
 
 // アプリ初期化を実行（DOMContentLoadedで既に実行されるため削除）
 // initializeAppAuth(); // 重複削除
