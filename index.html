@@ -63,11 +63,19 @@
             <!-- マップタブ -->
             <div id="map-tab" class="tab-content active">
                 <div class="content">
+                    <!-- アクションボタンエリア -->
+                    <div class="action-buttons-section">
+                        <div class="action-buttons">
+                            <button id="start-walk-btn" class="action-btn walk-btn">🚶‍♂️ 散歩開始</button>
+                            <button id="check-in-btn" class="action-btn check-in-btn">📍 チェックイン</button>
+                            <button id="check-out-btn" class="action-btn check-out-btn hidden">❌ チェックアウト</button>
+                        </div>
+                    </div>
+                    
                     <!-- 無料マップ（OpenStreetMap with Leaflet） -->
                     <div class="map-container">
                         <div id="leaflet-map" class="map"></div>
                         <div class="map-controls">
-                            <button id="start-walk-btn" class="walk-button-map">🚶‍♂️ 散歩開始</button>
                             <button id="center-map-btn" class="map-control-btn">📍 現在地</button>
                             <button id="toggle-map-btn" class="map-control-btn">🗺️ 表示切替</button>
                         </div>
@@ -112,11 +120,6 @@
 
                         <div id="location-people" class="location-people">
                             <!-- 動的に人が追加されます -->
-                        </div>
-
-                        <div class="check-in-section">
-                            <button id="check-in-btn" class="check-in-btn">📍 この場所にチェックイン</button>
-                            <button id="check-out-btn" class="check-out-btn hidden">❌ チェックアウト</button>
                         </div>
                     </div>
                     

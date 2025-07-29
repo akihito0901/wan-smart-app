@@ -283,27 +283,67 @@ header {
     transform: translateY(-1px);
 }
 
-/* マップ上の散歩開始ボタン */
-.walk-button-map {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
+/* アクションボタンセクション（マップ上部） */
+.action-buttons-section {
+    background: white;
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 12px 16px;
     border: none;
-    border-radius: 8px;
-    padding: 10px 16px;
-    font-size: 13px;
+    border-radius: 10px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
-    backdrop-filter: blur(5px);
-    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
-    width: 100%;
-    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-.walk-button-map:hover {
+/* 散歩開始ボタン */
+.action-btn.walk-btn {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.action-btn.walk-btn:hover {
     background: linear-gradient(135deg, #20c997, #17a2b8);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+/* チェックインボタン */
+.action-btn.check-in-btn {
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    color: white;
+}
+
+.action-btn.check-in-btn:hover {
+    background: linear-gradient(135deg, #357abd, #2c5aa0);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+}
+
+/* チェックアウトボタン */
+.action-btn.check-out-btn {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+}
+
+.action-btn.check-out-btn:hover {
+    background: linear-gradient(135deg, #c82333, #a02622);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
 }
 
 .map-toggle-hidden .map-container {
@@ -564,40 +604,6 @@ header {
     display: flex;
     gap: 10px;
     justify-content: center;
-}
-
-.check-in-btn, .check-out-btn {
-    flex: 1;
-    max-width: 200px;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 25px;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.check-in-btn {
-    background: linear-gradient(135deg, #28a745, #20c997);
-    color: white;
-}
-
-.check-in-btn:hover {
-    background: linear-gradient(135deg, #218838, #1ea080);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-}
-
-.check-out-btn {
-    background: linear-gradient(135deg, #dc3545, #c82333);
-    color: white;
-}
-
-.check-out-btn:hover {
-    background: linear-gradient(135deg, #c82333, #a71e2a);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
 }
 
 /* オンライン状態インジケーター */
@@ -1552,12 +1558,23 @@ header {
         margin-bottom: 20px;
     }
     
-    /* マップコントロールボタンのサイズ調整 */
-    .walk-button-map {
-        font-size: 11px;
-        padding: 8px 12px;
+    /* アクションボタンのレスポンシブ */
+    .action-buttons {
+        flex-direction: column;
+        gap: 8px;
     }
     
+    .action-btn {
+        font-size: 12px;
+        padding: 10px 14px;
+    }
+    
+    .action-buttons-section {
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+    
+    /* マップコントロールボタンのサイズ調整 */
     .map-control-btn {
         font-size: 10px;
         padding: 6px 10px;
