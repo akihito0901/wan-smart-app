@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>決済キャンセル - バイブコーディング革命</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .cancel-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            max-width: 600px;
+            margin: 20px;
+        }
+
+        .cancel-icon {
+            font-size: 5rem;
+            margin-bottom: 30px;
+            animation: shake 2s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .cancel-message {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .reminder {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .benefit-item {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            font-size: 1.1rem;
+        }
+
+        .benefit-icon {
+            font-size: 1.5rem;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .urgent-notice {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .cta-button {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 20px 40px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: inline-block;
+            margin: 20px 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.4);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(40, 167, 69, 0.6);
+        }
+
+        .secondary-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.2);
+        }
+
+        .secondary-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 15px 40px rgba(255, 255, 255, 0.3);
+        }
+
+        .timer {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffeb3b;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .cancel-container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .cancel-message {
+                font-size: 1.1rem;
+            }
+            
+            .cta-button {
+                display: block;
+                margin: 10px 0;
+                padding: 15px 30px;
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cancel-container">
+        <div class="cancel-icon">😢</div>
+        
+        <h1>決済がキャンセルされました</h1>
+        
+        <p class="cancel-message">
+            まだ諦めないでください！<br>
+            月額9,800円の固定費から解放される最後のチャンスです。
+        </p>
+
+        <div class="urgent-notice">
+            <h3>⚠️ 期間限定価格 残り時間</h3>
+            <div class="timer" id="countdown">
+                <!-- JavaScriptで更新 -->
+            </div>
+            <p>この機会を逃すと、通常価格39,800円に戻ります</p>
+        </div>
+
+        <div class="reminder">
+            <h3 style="margin-bottom: 20px; text-align: center;">🎯 逃してしまうもの</h3>
+            
+            <div class="benefit-item">
+                <div class="benefit-icon">💰</div>
+                <div>年間117,600円の固定費削減</div>
+            </div>
+            
+            <div class="benefit-item">
+                <div class="benefit-icon">⚡</div>
+                <div>30分でプロ級HPが完成するスキル</div>
+            </div>
+            
+            <div class="benefit-item">
+                <div class="benefit-icon">🆓</div>
+                <div>業者への依存から完全解放</div>
+            </div>
+            
+            <div class="benefit-item">
+                <div class="benefit-icon">🎁</div>
+                <div>豪華特典（テンプレート・サポート等）</div>
+            </div>
+            
+            <div class="benefit-item">
+                <div class="benefit-icon">🛡️</div>
+                <div>30日間返金保証</div>
+            </div>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.1); padding: 25px; border-radius: 15px; margin: 25px 0;">
+            <h3>🤔 キャンセルした理由は？</h3>
+            <p style="margin: 15px 0;">
+                もし価格に不安があるなら、考えてみてください：<br>
+                <strong>月額9,800円×4ヶ月 = 39,200円</strong><br>
+                今なら19,800円で一生使えるスキルが手に入ります。
+            </p>
+        </div>
+
+        <div style="margin-top: 40px;">
+            <a href="/vibe-coding-lp.html" class="cta-button">
+                やっぱり習得する
+            </a>
+            <a href="/" class="cta-button secondary-button">
+                ホームに戻る
+            </a>
+        </div>
+
+        <div style="margin-top: 30px; font-size: 0.9rem; opacity: 0.7;">
+            <p>最後のチャンスを逃さないでください。</p>
+            <p>あなたの成功を心から応援しています。</p>
+        </div>
+    </div>
+
+    <script>
+        // カウントダウンタイマー
+        function updateCountdown() {
+            const deadline = new Date();
+            deadline.setDate(deadline.getDate() + 30); // 30日後
+            deadline.setHours(23, 59, 59, 999); // 23:59:59に設定
+            
+            const now = new Date();
+            const timeLeft = deadline - now;
+            
+            if (timeLeft > 0) {
+                const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                
+                document.getElementById('countdown').innerHTML = 
+                    `${days}日 ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+                document.getElementById('countdown').innerHTML = '期間終了';
+            }
+        }
+        
+        setInterval(updateCountdown, 1000);
+        updateCountdown(); // 初回実行
+
+        // ページ読み込み時のアニメーション
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.querySelector('.cancel-container');
+            container.style.opacity = '0';
+            container.style.transform = 'translateY(50px)';
+            
+            setTimeout(() => {
+                container.style.transition = 'all 0.8s ease';
+                container.style.opacity = '1';
+                container.style.transform = 'translateY(0)';
+            }, 100);
+        });
+
+        // 10秒後に再購入を促すポップアップ
+        setTimeout(() => {
+            if (confirm('まだ迷っていますか？\n\n30日間の返金保証があるので、リスクはありません。\n\n今すぐ決断して、月額費用から解放されませんか？')) {
+                window.location.href = '/vibe-coding-lp.html#price';
+            }
+        }, 10000);
+    </script>
+</body>
+</html>
