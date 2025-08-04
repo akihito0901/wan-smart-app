@@ -59,6 +59,9 @@ let currentGroups = ['close-friends', 'walking-buddies', 'park-friends']; // デ
 let selectedFriend = null; // 選択された友達（グループ変更用）
 let currentFilter = 'all'; // 現在のフィルター
 let mapToggled = false; // マップ表示切替状態
+let walkPathLayer = null; // 散歩ルート表示用レイヤー
+let currentWalkPolyline = null; // 現在の散歩ルート
+let lastLoadedWalks = []; // 最後に読み込んだ散歩履歴（ルート表示用）
 
 // DOM要素
 const loginScreen = document.getElementById('login-screen');
@@ -849,6 +852,9 @@ async function endWalk() {
         // 散歩統計表示を停止
         stopWalkStatsDisplay();
         
+        // 散歩ルート表示をクリア
+        clearWalkPathFromMap();
+        
         // ログを記録（walkDataをnullにする前に）
         console.log('散歩完了:', { distance: walkData.distance, duration });
         
@@ -881,6 +887,9 @@ function startLocationTracking() {
                 walkData.distance += distance;
                 walkData.path.push(newLocation);
                 walkData.lastLocation = newLocation;
+                
+                // マップに散歩ルートを表示
+                updateWalkPathOnMap();
                 
                 console.log(`散歩中: ${walkData.distance.toFixed(2)}km`);
             }
@@ -916,6 +925,56 @@ function calculateDistance(pos1, pos2) {
               Math.sin(dLng/2) * Math.sin(dLng/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c;
+}
+
+// 散歩ルートをマップに表示
+function updateWalkPathOnMap() {
+    if (!leafletMap || !walkData || !walkData.path || walkData.path.length < 2) return;
+    
+    // 既存のルートがあれば削除
+    if (currentWalkPolyline) {
+        leafletMap.removeLayer(currentWalkPolyline);
+    }
+    
+    // 新しいルートを描画
+    const latLngs = walkData.path.map(point => [point.lat, point.lng]);
+    currentWalkPolyline = L.polyline(latLngs, {
+        color: '#ff6b6b',
+        weight: 4,
+        opacity: 0.8,
+        dashArray: '5, 10'
+    }).addTo(leafletMap);
+    
+    console.log('散歩ルート更新:', walkData.path.length, 'ポイント');
+}
+
+// 散歩ルートをマップからクリア
+function clearWalkPathFromMap() {
+    if (currentWalkPolyline && leafletMap) {
+        leafletMap.removeLayer(currentWalkPolyline);
+        currentWalkPolyline = null;
+        console.log('散歩ルートをクリア');
+    }
+}
+
+// 履歴の散歩ルートを表示
+function showHistoryWalkPath(walkPath) {
+    if (!leafletMap || !walkPath || walkPath.length < 2) return;
+    
+    // 既存のルートをクリア
+    clearWalkPathFromMap();
+    
+    // 履歴ルートを表示
+    const latLngs = walkPath.map(point => [point.lat, point.lng]);
+    currentWalkPolyline = L.polyline(latLngs, {
+        color: '#28a745',
+        weight: 3,
+        opacity: 0.7
+    }).addTo(leafletMap);
+    
+    // ルート全体が見えるようにマップを調整
+    const bounds = L.latLngBounds(latLngs);
+    leafletMap.fitBounds(bounds, { padding: [20, 20] });
 }
 
 // 散歩統計のリアルタイム表示
@@ -1274,8 +1333,16 @@ async function loadWalkHistory(filter = 'all') {
         );
         
         const querySnapshot = await getDocs(q);
+        console.log(`散歩履歴取得: ${querySnapshot.size}件`);
+        
+        if (querySnapshot.size === 0) {
+            console.log('散歩履歴がありません。Firestoreに散歩データが保存されているか確認してください。');
+        }
+        
         querySnapshot.forEach((doc) => {
             const data = doc.data();
+            console.log('散歩データ:', data);
+            
             if (data.startTime && data.endTime) {
                 walks.push({
                     id: doc.id,
@@ -1283,11 +1350,17 @@ async function loadWalkHistory(filter = 'all') {
                     startTime: data.startTime.toDate(),
                     endTime: data.endTime.toDate()
                 });
+            } else if (data.startTime) {
+                // 終了時間がない場合（未完了の散歩）もログ出力
+                console.warn('未完了の散歩データ:', data);
             }
         });
         
         // フィルター適用
         const filteredWalks = filterWalks(walks, filter);
+        
+        // 散歩履歴を保存（ルート表示用）
+        lastLoadedWalks = filteredWalks;
         
         // 履歴表示
         displayWalkHistory(filteredWalks);
@@ -1331,11 +1404,12 @@ function displayWalkHistory(walks) {
         return;
     }
     
-    const historyHTML = walks.map(walk => {
+    const historyHTML = walks.map((walk, index) => {
         const date = formatDate(walk.startTime);
         const time = formatTime(walk.startTime);
         const distance = walk.distance ? walk.distance.toFixed(2) : '0.00';
         const duration = walk.duration || 0;
+        const hasPath = walk.path && walk.path.length > 1;
         
         return `
             <div class="history-item">
@@ -1344,6 +1418,7 @@ function displayWalkHistory(walks) {
                         <div class="history-date">${date}</div>
                         <div class="history-time">${time}</div>
                     </div>
+                    ${hasPath ? `<button class="show-route-btn" onclick="showWalkRoute(${index})" title="散歩ルートを表示">🗺️</button>` : ''}
                 </div>
                 <div class="history-stats">
                     <div class="history-stat">
@@ -1365,6 +1440,35 @@ function displayWalkHistory(walks) {
     
     historyList.innerHTML = historyHTML;
 }
+
+// 散歩ルートを表示（履歴から）
+function showWalkRoute(walkIndex) {
+    const walk = lastLoadedWalks[walkIndex];
+    if (!walk || !walk.path || walk.path.length < 2) {
+        alert('この散歩のルート情報がありません');
+        return;
+    }
+    
+    // マップタブに切り替え
+    showTab('map');
+    
+    // ルートを表示
+    showHistoryWalkPath(walk.path);
+    
+    // アラートで情報表示
+    const date = formatDate(walk.startTime);
+    const distance = walk.distance ? walk.distance.toFixed(2) : '0.00';
+    const duration = walk.duration || 0;
+    
+    setTimeout(() => {
+        alert(`📍 ${date}の散歩ルート\n📏 距離: ${distance}km\n⏰ 時間: ${duration}分\n\nマップに緑色の線で表示されています`);
+    }, 500);
+    
+    console.log('散歩ルート表示:', walk);
+}
+
+// グローバルスコープに関数を追加
+window.showWalkRoute = showWalkRoute;
 
 // 履歴統計更新
 function updateHistorySummary(walks) {
