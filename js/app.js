@@ -731,6 +731,21 @@ async function loadUserProfile() {
         
         if (docSnap.exists()) {
             const data = docSnap.data();
+            
+            // currentUserオブジェクトにFirestoreデータをマージ
+            currentUser.userName = data.userName || '';
+            currentUser.dogName = data.dogName || '';
+            currentUser.dogBreed = data.dogBreed || '';
+            currentUser.dogBirthday = data.dogBirthday || '';
+            currentUser.dogGender = data.dogGender || '';
+            currentUser.dogPersonality = data.dogPersonality || '';
+            currentUser.avatarBase64 = data.avatarBase64 || '';
+            currentUser.avatarURL = data.avatarURL || '';
+            currentUser.totalWalks = data.totalWalks || 0;
+            currentUser.friendsCount = data.friendsCount || 0;
+            
+            console.log('currentUserにプロフィールデータをマージ:', currentUser);
+            
             document.getElementById('user-name-input').value = data.userName || '';
             document.getElementById('dog-name-input').value = data.dogName || '';
             document.getElementById('dog-breed-select').value = data.dogBreed || '';
@@ -1592,12 +1607,56 @@ function updateQRUserInfo() {
     }
 }
 
+// QRCodeライブラリの読み込み待機
+function waitForQRCode() {
+    return new Promise((resolve) => {
+        if (typeof QRCode !== 'undefined') {
+            resolve();
+        } else {
+            console.log('QRCodeライブラリの読み込み待機中...');
+            const checkInterval = setInterval(() => {
+                if (typeof QRCode !== 'undefined') {
+                    clearInterval(checkInterval);
+                    console.log('QRCodeライブラリ読み込み完了');
+                    resolve();
+                }
+            }, 100);
+            
+            // 10秒でタイムアウト
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                console.error('QRCodeライブラリの読み込みタイムアウト');
+                resolve();
+            }, 10000);
+        }
+    });
+}
+
 // ユーザーのQRコードを生成
-function generateUserQRCode() {
-    if (!currentUser) return;
+async function generateUserQRCode() {
+    console.log('QRコード生成開始');
+    
+    if (!currentUser) {
+        console.error('currentUserが存在しません');
+        return;
+    }
     
     const qrContainer = document.getElementById('qr-code-container');
-    if (!qrContainer) return;
+    if (!qrContainer) {
+        console.error('qr-code-containerが見つかりません');
+        return;
+    }
+    
+    // QRコードライブラリの読み込み待機
+    qrContainer.innerHTML = '<p>QRコードライブラリを読み込み中...</p>';
+    await waitForQRCode();
+    
+    // QRコードライブラリの存在確認
+    if (typeof QRCode === 'undefined') {
+        console.error('QRCodeライブラリが読み込まれていません');
+        qrContainer.innerHTML = '<p style="color: red;">QRコードライブラリの読み込みに失敗しました</p>';
+        return;
+    }
     
     // QRコードのデータ（ユーザーID）
     const qrData = JSON.stringify({
@@ -1608,24 +1667,33 @@ function generateUserQRCode() {
         avatar: currentUser.avatarBase64 || '🐕'
     });
     
+    console.log('QRコードデータ:', qrData);
+    
     // QRコードをクリア
-    qrContainer.innerHTML = '';
+    qrContainer.innerHTML = '<p>QRコードを生成中...</p>';
     
     // QRコードを生成
-    QRCode.toCanvas(qrData, {
-        width: 200,
-        height: 200,
-        colorDark: '#333333',
-        colorLight: '#ffffff',
-        margin: 2
-    }, (error, canvas) => {
-        if (error) {
-            console.error('QRコード生成エラー:', error);
-            qrContainer.innerHTML = '<p>QRコードの生成に失敗しました</p>';
-        } else {
-            qrContainer.appendChild(canvas);
-        }
-    });
+    try {
+        QRCode.toCanvas(qrData, {
+            width: 200,
+            height: 200,
+            colorDark: '#333333',
+            colorLight: '#ffffff',
+            margin: 2
+        }, (error, canvas) => {
+            if (error) {
+                console.error('QRコード生成エラー:', error);
+                qrContainer.innerHTML = '<p style="color: red;">QRコードの生成に失敗しました</p>';
+            } else {
+                console.log('QRコード生成成功');
+                qrContainer.innerHTML = '';
+                qrContainer.appendChild(canvas);
+            }
+        });
+    } catch (error) {
+        console.error('QRコード生成例外エラー:', error);
+        qrContainer.innerHTML = '<p style="color: red;">QRコード生成中にエラーが発生しました</p>';
+    }
 }
 
 // カメラを開始
