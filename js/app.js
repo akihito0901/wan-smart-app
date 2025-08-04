@@ -320,6 +320,40 @@ function setupEventListeners() {
             }
         });
     }
+    
+    // QRコード友達追加機能のイベントリスナー
+    const closeAddFriendModalBtn = document.getElementById('close-add-friend-modal');
+    if (closeAddFriendModalBtn) {
+        closeAddFriendModalBtn.addEventListener('click', closeAddFriendModal);
+    }
+    
+    const showQRTab = document.getElementById('show-qr-tab');
+    const scanQRTab = document.getElementById('scan-qr-tab');
+    if (showQRTab && scanQRTab) {
+        showQRTab.addEventListener('click', () => {
+            showQRTab.classList.add('active');
+            scanQRTab.classList.remove('active');
+            document.getElementById('show-qr-section').classList.remove('hidden');
+            document.getElementById('scan-qr-section').classList.add('hidden');
+            stopCamera(); // カメラを停止
+        });
+        
+        scanQRTab.addEventListener('click', () => {
+            scanQRTab.classList.add('active');
+            showQRTab.classList.remove('active');
+            document.getElementById('scan-qr-section').classList.remove('hidden');
+            document.getElementById('show-qr-section').classList.add('hidden');
+        });
+    }
+    
+    const startCameraBtn = document.getElementById('start-camera-btn');
+    const stopCameraBtn = document.getElementById('stop-camera-btn');
+    if (startCameraBtn) {
+        startCameraBtn.addEventListener('click', startCamera);
+    }
+    if (stopCameraBtn) {
+        stopCameraBtn.addEventListener('click', stopCamera);
+    }
 }
 
 // Firebase Authを使ったGoogleログイン
@@ -612,49 +646,53 @@ function initializeMap() {
 
 
 
-// 近くの犬データ読み込み
-function loadNearbyDogs() {
-    // サンプルデータ（実際はFirestoreから取得）
-    const sampleDogs = [
-        {
-            id: 1,
-            ownerName: '田中さん',
-            dogName: 'ポチ',
-            breed: '柴犬',
-            age: 3,
-            distance: '300m',
-            avatar: '🐕',
-            personality: '人懐っこくて元気いっぱい'
-        },
-        {
-            id: 2,
-            ownerName: '佐藤さん',
-            dogName: 'モコ',
-            breed: 'トイプードル',
-            age: 2,
-            distance: '500m',
-            avatar: '🐩',
-            personality: 'おしとやかで賢い'
-        },
-        {
-            id: 3,
-            ownerName: '鈴木さん',
-            dogName: 'ラブ',
-            breed: 'ラブラドール',
-            age: 5,
-            distance: '800m',
-            avatar: '🦮',
-            personality: '穏やかで子供好き'
-        }
-    ];
+// 近くの犬データ読み込み（実際の友達のみ表示）
+async function loadNearbyDogs() {
+    if (!currentUser) return;
     
     const nearbyDogsContainer = document.getElementById('nearby-dogs');
-    nearbyDogsContainer.innerHTML = '';
+    nearbyDogsContainer.innerHTML = '<div class="loading-message">近くの友達を読み込み中...</div>';
     
-    sampleDogs.forEach(dog => {
-        const dogElement = createDogElement(dog);
-        nearbyDogsContainer.appendChild(dogElement);
-    });
+    try {
+        // Firestoreから実際の友達データを取得
+        const friends = await loadFriendsFromFirestore();
+        
+        if (friends.length === 0) {
+            nearbyDogsContainer.innerHTML = `
+                <div class="no-nearby-dogs">
+                    <h4>まだ友達がいません</h4>
+                    <p>QRコードで友達を追加しましょう！</p>
+                    <button onclick="showAddFriendModal()" class="add-friend-btn">友達を追加 👥</button>
+                </div>
+            `;
+            return;
+        }
+        
+        nearbyDogsContainer.innerHTML = '';
+        friends.forEach(friend => {
+            const dogElement = createDogElement({
+                id: friend.id,
+                ownerName: friend.ownerName,
+                dogName: friend.dogName,
+                breed: friend.breed || '犬種不明',
+                age: friend.age || 0,
+                distance: '位置情報なし',
+                avatar: friend.avatar || '🐕',
+                personality: friend.personality || '詳細不明'
+            });
+            nearbyDogsContainer.appendChild(dogElement);
+        });
+        
+    } catch (error) {
+        console.error('近くの犬データ読み込みエラー:', error);
+        nearbyDogsContainer.innerHTML = `
+            <div class="no-nearby-dogs">
+                <h4>友達を読み込めませんでした</h4>
+                <p>もう一度お試しください</p>
+                <button onclick="loadNearbyDogs()" class="retry-btn">再試行</button>
+            </div>
+        `;
+    }
 }
 
 // 犬要素作成
@@ -1127,47 +1165,46 @@ async function updateWalkCount() {
     }
 }
 
-// 友達リスト読み込み（グループ分け対応）
-function loadFriends() {
+// 友達リスト読み込み（実際の友達のみ表示）
+async function loadFriends() {
     if (!currentUser) return;
     
-    // サンプルデータ（実際はFirestoreから取得）
-    const sampleFriends = [
-        {
-            id: 1,
-            ownerName: '田中さん',
-            dogName: 'ポチ',
-            lastMet: '昨日一緒に散歩しました',
-            avatar: '🐕',
-            groups: ['close-friends', 'walking-buddies']
-        },
-        {
-            id: 2,
-            ownerName: '佐藤さん',
-            dogName: 'モコ',
-            lastMet: '3日前に公園で会いました',
-            avatar: '🐩',
-            groups: ['walking-buddies']
-        },
-        {
-            id: 3,
-            ownerName: '鈴木さん',
-            dogName: 'ラブ',
-            lastMet: '1週間前に公園で会いました',
-            avatar: '🦮',
-            groups: ['park-friends']
-        },
-        {
-            id: 4,
-            ownerName: '山田さん',
-            dogName: 'チョコ',
-            lastMet: '2週間前に散歩で会いました',
-            avatar: '🐕‍🦺',
-            groups: ['close-friends', 'park-friends']
-        }
-    ];
+    const friendsContainer = document.getElementById('friends-list');
+    if (friendsContainer) {
+        friendsContainer.innerHTML = '<div class="loading-message">友達リストを読み込み中...</div>';
+    }
     
-    displayFriendsGrouped(sampleFriends);
+    try {
+        // Firestoreから実際の友達データを取得
+        const friends = await loadFriendsFromFirestore();
+        
+        if (friends.length === 0) {
+            if (friendsContainer) {
+                friendsContainer.innerHTML = `
+                    <div class="no-friends">
+                        <h4>まだ友達がいません</h4>
+                        <p>QRコードで友達を追加してみましょう！</p>
+                        <button onclick="showAddFriendModal()" class="add-friend-btn">友達を追加 👥</button>
+                    </div>
+                `;
+            }
+            return;
+        }
+        
+        displayFriendsGrouped(friends);
+        
+    } catch (error) {
+        console.error('友達リスト読み込みエラー:', error);
+        if (friendsContainer) {
+            friendsContainer.innerHTML = `
+                <div class="no-friends">
+                    <h4>友達リストの読み込みに失敗しました</h4>
+                    <p>もう一度お試しください</p>
+                    <button onclick="loadFriends()" class="retry-btn">再試行</button>
+                </div>
+            `;
+        }
+    }
 }
 
 // 友達をグループ分けして表示
@@ -1469,6 +1506,348 @@ function showWalkRoute(walkIndex) {
 
 // グローバルスコープに関数を追加
 window.showWalkRoute = showWalkRoute;
+
+// 現在地近くの公園でドロップダウンを更新
+function updateLocationDropdown() {
+    const locationSelect = document.getElementById('location-select');
+    if (!locationSelect) return;
+    
+    // 公園データを取得（addParkMarkersと同じデータを使用）
+    const allParks = [
+        { name: '渋谷公園', lat: 35.6586, lng: 139.7016, value: 'shibuya-park' },
+        { name: '代々木公園', lat: 35.6732, lng: 139.6940, value: 'yoyogi-park' },
+        { name: '上野公園', lat: 35.7148, lng: 139.7734, value: 'ueno-park' },
+        { name: '井の頭公園', lat: 35.7004, lng: 139.5802, value: 'inokashira-park' },
+        { name: '駒沢オリンピック公園', lat: 35.6298, lng: 139.6566, value: 'komazawa-park' },
+        { name: '新宿中央公園', lat: 35.6899, lng: 139.6935, value: 'shinjuku-central-park' },
+        { name: '砧公園', lat: 35.6389, lng: 139.6289, value: 'kinuta-park' },
+        { name: '林試の森公園', lat: 35.6241, lng: 139.7030, value: 'rinshi-park' },
+        { name: '飛鳥山公園', lat: 35.7520, lng: 139.7385, value: 'asukayama-park' },
+        { name: '舎人公園', lat: 35.7892, lng: 139.7920, value: 'toneri-park' },
+        { name: '石神井公園', lat: 35.7356, lng: 139.5944, value: 'shakujii-park' },
+        { name: '善福寺公園', lat: 35.7144, lng: 139.5889, value: 'zenpukuji-park' },
+        { name: '水元公園', lat: 35.7744, lng: 139.8531, value: 'mizumoto-park' },
+        { name: '葛西臨海公園', lat: 35.6455, lng: 139.8597, value: 'kasai-park' },
+        { name: '夢の島公園', lat: 35.6553, lng: 139.8267, value: 'yumenoshima-park' },
+        { name: 'お台場海浜公園', lat: 35.6281, lng: 139.7714, value: 'odaiba-park' }
+    ];
+    
+    // 現在地から近い公園を取得
+    const nearbyParks = userLocation ? 
+        allParks.filter(park => {
+            const distance = calculateDistance(userLocation, { lat: park.lat, lng: park.lng });
+            return distance <= 10; // 10km以内に拡大
+        }).sort((a, b) => {
+            const distanceA = calculateDistance(userLocation, { lat: a.lat, lng: a.lng });
+            const distanceB = calculateDistance(userLocation, { lat: b.lat, lng: b.lng });
+            return distanceA - distanceB;
+        }).slice(0, 10) : allParks.slice(0, 10);
+    
+    // ドロップダウンをクリアして更新
+    locationSelect.innerHTML = '';
+    
+    nearbyParks.forEach((park, index) => {
+        const option = document.createElement('option');
+        option.value = park.value;
+        option.textContent = userLocation ? 
+            `${park.name} (${calculateDistance(userLocation, { lat: park.lat, lng: park.lng }).toFixed(1)}km)` : 
+            park.name;
+        locationSelect.appendChild(option);
+        
+        // 最初の公園を選択
+        if (index === 0) {
+            option.selected = true;
+        }
+    });
+    
+    console.log(`近くの公園 ${nearbyParks.length}箇所をドロップダウンに追加しました`);
+}
+
+// QRコード友達追加機能
+let currentStream = null; // カメラストリーム
+let qrScanner = null; // QRスキャナー
+
+// 友達追加モーダルを表示
+function showAddFriendModal() {
+    const modal = document.getElementById('add-friend-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        // ユーザー情報を表示
+        updateQRUserInfo();
+        // QRコードを生成
+        generateUserQRCode();
+    }
+}
+
+// QRコードにユーザー情報を表示
+function updateQRUserInfo() {
+    if (!currentUser) return;
+    
+    const avatarElement = document.getElementById('qr-user-avatar');
+    const nameElement = document.getElementById('qr-user-name');
+    
+    if (avatarElement && nameElement) {
+        avatarElement.textContent = currentUser.avatarBase64 || '🐕';
+        nameElement.textContent = `${currentUser.userName || 'ユーザー'} & ${currentUser.dogName || '愛犬'}`;
+    }
+}
+
+// ユーザーのQRコードを生成
+function generateUserQRCode() {
+    if (!currentUser) return;
+    
+    const qrContainer = document.getElementById('qr-code-container');
+    if (!qrContainer) return;
+    
+    // QRコードのデータ（ユーザーID）
+    const qrData = JSON.stringify({
+        type: 'wansmart_friend',
+        userId: currentUser.uid,
+        userName: currentUser.userName || 'ユーザー',
+        dogName: currentUser.dogName || '愛犬',
+        avatar: currentUser.avatarBase64 || '🐕'
+    });
+    
+    // QRコードをクリア
+    qrContainer.innerHTML = '';
+    
+    // QRコードを生成
+    QRCode.toCanvas(qrData, {
+        width: 200,
+        height: 200,
+        colorDark: '#333333',
+        colorLight: '#ffffff',
+        margin: 2
+    }, (error, canvas) => {
+        if (error) {
+            console.error('QRコード生成エラー:', error);
+            qrContainer.innerHTML = '<p>QRコードの生成に失敗しました</p>';
+        } else {
+            qrContainer.appendChild(canvas);
+        }
+    });
+}
+
+// カメラを開始
+async function startCamera() {
+    try {
+        const video = document.getElementById('camera-video');
+        const startBtn = document.getElementById('start-camera-btn');
+        const stopBtn = document.getElementById('stop-camera-btn');
+        
+        currentStream = await navigator.mediaDevices.getUserMedia({
+            video: { 
+                facingMode: 'environment', // 背面カメラを優先
+                width: { ideal: 300 },
+                height: { ideal: 300 }
+            },
+            audio: false
+        });
+        
+        video.srcObject = currentStream;
+        video.play();
+        
+        // ボタンの表示切り替え
+        if (startBtn) startBtn.style.display = 'none';
+        if (stopBtn) stopBtn.style.display = 'inline-block';
+        
+        // QRスキャンを開始
+        startQRScanning();
+        
+    } catch (error) {
+        console.error('カメラアクセスエラー:', error);
+        alert('カメラにアクセスできませんでした。ブラウザの設定を確認してください。');
+    }
+}
+
+// カメラを停止
+function stopCamera() {
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+    }
+    
+    const video = document.getElementById('camera-video');
+    const startBtn = document.getElementById('start-camera-btn');
+    const stopBtn = document.getElementById('stop-camera-btn');
+    
+    if (video) video.srcObject = null;
+    if (startBtn) startBtn.style.display = 'inline-block';
+    if (stopBtn) stopBtn.style.display = 'none';
+    
+    // QRスキャンを停止
+    if (qrScanner) {
+        clearInterval(qrScanner);
+        qrScanner = null;
+    }
+}
+
+// QRスキャンを開始
+function startQRScanning() {
+    const video = document.getElementById('camera-video');
+    const canvas = document.getElementById('camera-canvas');
+    const context = canvas.getContext('2d');
+    
+    qrScanner = setInterval(() => {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            
+            if (code) {
+                handleQRCodeDetected(code.data);
+            }
+        }
+    }, 100);
+}
+
+// QRコードが検出された時の処理
+async function handleQRCodeDetected(qrData) {
+    console.log('QRコード検出:', qrData);
+    
+    try {
+        const friendData = JSON.parse(qrData);
+        
+        if (friendData.type !== 'wansmart_friend') {
+            alert('わんスマート用のQRコードではありません');
+            return;
+        }
+        
+        if (friendData.userId === currentUser.uid) {
+            alert('自分のQRコードは追加できません');
+            return;
+        }
+        
+        // QRスキャンを停止
+        stopCamera();
+        
+        // 友達追加処理
+        await addFriendFromQR(friendData);
+        
+    } catch (error) {
+        console.error('QRコード解析エラー:', error);
+        alert('無効なQRコードです');
+    }
+}
+
+// QRコードから友達を追加
+async function addFriendFromQR(friendData) {
+    try {
+        // Firestoreに友達関係を保存
+        await saveFriendToFirestore(friendData);
+        
+        // 成功メッセージ
+        const scanResult = document.getElementById('scan-result');
+        if (scanResult) {
+            scanResult.innerHTML = `
+                <div style="color: #28a745; text-align: center;">
+                    <h4>✅ 友達追加完了！</h4>
+                    <p>${friendData.userName} & ${friendData.dogName}さんを友達に追加しました</p>
+                </div>
+            `;
+        }
+        
+        // 友達リストを更新
+        setTimeout(() => {
+            loadFriends();
+            loadNearbyDogs();
+        }, 1000);
+        
+        // 2秒後にモーダルを閉じる
+        setTimeout(() => {
+            closeAddFriendModal();
+        }, 2000);
+        
+    } catch (error) {
+        console.error('友達追加エラー:', error);
+        alert('友達の追加に失敗しました');
+    }
+}
+
+// 友達追加モーダルを閉じる
+function closeAddFriendModal() {
+    const modal = document.getElementById('add-friend-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    
+    // カメラを停止
+    stopCamera();
+}
+
+// 友達をFirestoreに保存
+async function saveFriendToFirestore(friendData) {
+    if (!currentUser) throw new Error('ユーザーがログインしていません');
+    
+    try {
+        // 自分の友達リストに追加
+        const myFriendsRef = collection(db, 'users', currentUser.uid, 'friends');
+        await addDoc(myFriendsRef, {
+            userId: friendData.userId,
+            ownerName: friendData.userName,
+            dogName: friendData.dogName,
+            avatar: friendData.avatar,
+            addedAt: serverTimestamp(),
+            groups: ['walking-buddies'] // デフォルトグループ
+        });
+        
+        // 相手の友達リストにも追加
+        const theirFriendsRef = collection(db, 'users', friendData.userId, 'friends');
+        await addDoc(theirFriendsRef, {
+            userId: currentUser.uid,
+            ownerName: currentUser.userName || 'ユーザー',
+            dogName: currentUser.dogName || '愛犬',
+            avatar: currentUser.avatarBase64 || '🐕',
+            addedAt: serverTimestamp(),
+            groups: ['walking-buddies']
+        });
+        
+        console.log('友達追加完了:', friendData.userName);
+        
+    } catch (error) {
+        console.error('友達保存エラー:', error);
+        throw error;
+    }
+}
+
+// Firestoreから友達データを読み込み
+async function loadFriendsFromFirestore() {
+    if (!currentUser) return [];
+    
+    try {
+        const friendsRef = collection(db, 'users', currentUser.uid, 'friends');
+        const q = query(friendsRef, orderBy('addedAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        
+        const friends = [];
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            friends.push({
+                id: doc.id,
+                userId: data.userId,
+                ownerName: data.ownerName,
+                dogName: data.dogName,
+                avatar: data.avatar,
+                groups: data.groups || ['walking-buddies'],
+                addedAt: data.addedAt?.toDate(),
+                lastMet: '友達になりました'
+            });
+        });
+        
+        console.log(`友達データ読み込み完了: ${friends.length}人`);
+        return friends;
+        
+    } catch (error) {
+        console.error('友達データ読み込みエラー:', error);
+        return [];
+    }
+}
+
+// グローバルスコープに関数を追加
+window.showAddFriendModal = showAddFriendModal;
 
 // 履歴統計更新
 function updateHistorySummary(walks) {
@@ -2426,6 +2805,9 @@ function initializeLocationMatching() {
     // Leafletマップ初期化
     initializeLeafletMap();
     
+    // 現在地近くの公園でドロップダウンを更新
+    updateLocationDropdown();
+    
     // 位置選択のイベントリスナー
     const locationSelect = document.getElementById('location-select');
     if (locationSelect) {
@@ -2751,14 +3133,38 @@ function getCurrentLocationForMap() {
 function addParkMarkers() {
     if (!leafletMap) return;
     
-    const parks = [
+    // より多くの公園データ（東京都内の主要公園）
+    const allParks = [
         { name: '渋谷公園', lat: 35.6586, lng: 139.7016, people: 4 },
         { name: '代々木公園', lat: 35.6732, lng: 139.6940, people: 8 },
         { name: '上野公園', lat: 35.7148, lng: 139.7734, people: 12 },
         { name: '井の頭公園', lat: 35.7004, lng: 139.5802, people: 6 },
         { name: '駒沢オリンピック公園', lat: 35.6298, lng: 139.6566, people: 3 },
-        { name: '新宿中央公园', lat: 35.6899, lng: 139.6935, people: 7 }
+        { name: '新宿中央公園', lat: 35.6899, lng: 139.6935, people: 7 },
+        { name: '砧公園', lat: 35.6389, lng: 139.6289, people: 2 },
+        { name: '林試の森公園', lat: 35.6241, lng: 139.7030, people: 5 },
+        { name: '飛鳥山公園', lat: 35.7520, lng: 139.7385, people: 3 },
+        { name: '舎人公園', lat: 35.7892, lng: 139.7920, people: 1 },
+        { name: '石神井公園', lat: 35.7356, lng: 139.5944, people: 4 },
+        { name: '善福寺公園', lat: 35.7144, lng: 139.5889, people: 2 },
+        { name: '水元公園', lat: 35.7744, lng: 139.8531, people: 3 },
+        { name: '葛西臨海公園', lat: 35.6455, lng: 139.8597, people: 6 },
+        { name: '夢の島公園', lat: 35.6553, lng: 139.8267, people: 2 },
+        { name: 'お台場海浜公園', lat: 35.6281, lng: 139.7714, people: 8 }
     ];
+    
+    // 現在地から近い公園のみを表示（5km以内）
+    const nearbyParks = userLocation ? 
+        allParks.filter(park => {
+            const distance = calculateDistance(userLocation, { lat: park.lat, lng: park.lng });
+            return distance <= 5; // 5km以内
+        }).sort((a, b) => {
+            const distanceA = calculateDistance(userLocation, { lat: a.lat, lng: a.lng });
+            const distanceB = calculateDistance(userLocation, { lat: b.lat, lng: b.lng });
+            return distanceA - distanceB;
+        }).slice(0, 8) : allParks.slice(0, 8); // 現在地がない場合は最初の8つ
+    
+    const parks = nearbyParks;
     
     parks.forEach(park => {
         const marker = L.marker([park.lat, park.lng])

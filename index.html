@@ -425,7 +425,55 @@
             </div>
         </div>
     </div>
+    
+    <!-- QRコード友達追加モーダル -->
+    <div id="add-friend-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>友達を追加</h4>
+                <button id="close-add-friend-modal" class="close-modal-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="qr-tabs">
+                    <button id="show-qr-tab" class="qr-tab-btn active">QRコードを表示</button>
+                    <button id="scan-qr-tab" class="qr-tab-btn">QRコードをスキャン</button>
+                </div>
+                
+                <div id="show-qr-section" class="qr-section">
+                    <h5>あなたのQRコード</h5>
+                    <p>このQRコードを友達にスキャンしてもらいましょう</p>
+                    <div id="qr-code-container" class="qr-container">
+                        <!-- QRコードがここに生成されます -->
+                    </div>
+                    <div class="user-info">
+                        <div id="qr-user-avatar" class="qr-avatar">🐕</div>
+                        <div id="qr-user-name" class="qr-name">ユーザー名</div>
+                    </div>
+                </div>
+                
+                <div id="scan-qr-section" class="qr-section hidden">
+                    <h5>QRコードをスキャン</h5>
+                    <p>友達のQRコードをカメラでスキャンしてください</p>
+                    <div id="camera-container" class="camera-container">
+                        <video id="camera-video" width="300" height="300" autoplay></video>
+                        <canvas id="camera-canvas" width="300" height="300" style="display: none;"></canvas>
+                    </div>
+                    <div class="scan-actions">
+                        <button id="start-camera-btn" class="action-btn">カメラを開始</button>
+                        <button id="stop-camera-btn" class="action-btn" style="display: none;">カメラを停止</button>
+                    </div>
+                    <div id="scan-result" class="scan-result">
+                        <!-- スキャン結果がここに表示されます -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script type="module" src="js/app.js"></script>
+    <!-- QRコード生成ライブラリ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+    <!-- QRコードスキャンライブラリ -->
+    <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
 </body>
 </html>
