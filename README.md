@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# わんスマート (Wan Smart) 🐕
 
-## Getting Started
+愛犬の基本的な健康管理と情報提供をシンプルに行えるWebサービス
 
-First, run the development server:
+## 🚀 主な機能
 
+### ✅ 実装済み機能
+- **ユーザー認証** - メールアドレスとパスワードによる登録・ログイン
+- **給餌量チェッカー** - 科学的根拠に基づいた1日の推奨給餌量の自動計算
+- **フードランキング** - 人気フードTOP表示とカテゴリー別フィルター
+- **ワクチン記録** - 接種履歴の管理と次回予定日の自動表示
+- **イベント情報** - 全国の犬関連イベント一覧と都道府県別フィルター
+
+## 🛠 技術スタック
+
+- **フロントエンド**: React 19, Next.js 15 (App Router), TypeScript
+- **スタイリング**: Tailwind CSS 4
+- **認証**: NextAuth.js 4
+- **データベース**: PostgreSQL + Prisma ORM
+- **フォーム**: React Hook Form + Zod
+- **アイコン**: Lucide React
+- **デプロイ**: Vercel
+
+## 📋 セットアップ手順
+
+1. **依存関係のインストール**
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. **環境変数の設定**
+`.env`ファイルを作成し、以下を設定:
+```bash
+DATABASE_URL="your-postgresql-connection-string"
+NEXTAUTH_SECRET="your-secret-key"
+NEXTAUTH_URL="http://localhost:3000"
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. **データベースの初期化**
+```bash
+npx prisma generate
+npx prisma db push
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. **開発サーバーの起動**
+```bash
+npm run dev
+```
 
-## Learn More
+5. **ブラウザでアクセス**
+[http://localhost:3000](http://localhost:3000) を開く
 
-To learn more about Next.js, take a look at the following resources:
+## 📁 プロジェクト構造
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── api/               # APIエンドポイント
+│   ├── auth/              # 認証関連ページ
+│   ├── dashboard/         # ダッシュボード
+│   ├── feeding-calculator/ # 給餌量チェッカー
+│   ├── food-ranking/      # フードランキング
+│   ├── vaccine-records/   # ワクチン記録
+│   └── events/           # イベント情報
+├── components/           # 再利用可能コンポーネント
+└── lib/                 # ユーティリティ関数
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔧 スクリプト
 
-## Deploy on Vercel
+- `npm run dev` - 開発サーバー起動
+- `npm run build` - 本番ビルド
+- `npm run start` - 本番サーバー起動
+- `npm run lint` - ESLint実行
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📊 データベーススキーマ
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+主要なテーブル:
+- `users` - ユーザー情報
+- `dogs` - 犬の基本情報
+- `feeding_records` - 給餌記録
+- `foods` - フード情報
+- `vaccine_records` - ワクチン記録
+- `events` - イベント情報
+
+## 🎯 今後の拡張予定
+
+- 健康記録の詳細機能
+- 施設検索機能
+- コミュニティ機能
+- プッシュ通知
+- 多言語対応
+
+## 📝 ライセンス
+
+MIT License
+
+---
+
+**このプロジェクトは Claude Code で開発されました** 🤖
