@@ -67,7 +67,7 @@ export default function FeedingCalculator() {
       } else {
         setResult(data)
       }
-    } catch (error) {
+    } catch {
       setError('計算に失敗しました')
     } finally {
       setIsLoading(false)

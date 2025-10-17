@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Navigation } from '@/components/layout/navigation'
@@ -46,13 +46,7 @@ export default function FoodRanking() {
     }
   }, [session, status, router])
 
-  useEffect(() => {
-    if (session) {
-      fetchFoods()
-    }
-  }, [session, selectedCategory, selectedType, sortBy])
-
-  const fetchFoods = async () => {
+  const fetchFoods = useCallback(async () => {
     setLoading(true)
     setError('')
 
@@ -78,12 +72,18 @@ export default function FoodRanking() {
       } else {
         setFoods(data.foods)
       }
-    } catch (error) {
+    } catch {
       setError('フード情報の取得に失敗しました')
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedCategory, selectedType, sortBy])
+
+  useEffect(() => {
+    if (session) {
+      fetchFoods()
+    }
+  }, [session, fetchFoods])
 
   const getRankingIcon = (index: number) => {
     if (index === 0) return '🥇'

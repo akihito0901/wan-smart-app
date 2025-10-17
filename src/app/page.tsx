@@ -10,7 +10,6 @@ import {
   Shield, 
   Calendar,
   Heart,
-  Users,
   CheckCircle
 } from 'lucide-react'
 

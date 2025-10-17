@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Navigation } from '@/components/layout/navigation'
-import { Shield, Plus, Calendar, FileText, AlertCircle, Edit, Trash2 } from 'lucide-react'
+import { Shield, Plus, Calendar, FileText, AlertCircle } from 'lucide-react'
 
 interface VaccineRecord {
   id: string
@@ -66,7 +66,7 @@ export default function VaccineRecords() {
       } else {
         setRecords(data.records)
       }
-    } catch (error) {
+    } catch {
       setError('ワクチン記録の取得に失敗しました')
     } finally {
       setLoading(false)
@@ -105,7 +105,7 @@ export default function VaccineRecords() {
         setShowAddForm(false)
         fetchRecords()
       }
-    } catch (error) {
+    } catch {
       setError('ワクチン記録の登録に失敗しました')
     } finally {
       setLoading(false)
