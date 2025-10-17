@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  dog           Dog?
+  feedingRecords FeedingRecord[]
+  vaccineRecords VaccineRecord[]
+  
+  @@map("users")
+}
+
+model Dog {
+  id            String    @id @default(cuid())
+  name          String
+  breed         String
+  weight        Float
+  age           Int
+  activityLevel String    // "low", "medium", "high"
+  birthDate     DateTime?
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@map("dogs")
+}
+
+model FeedingRecord {
+  id            String    @id @default(cuid())
+  dailyAmount   Float
+  foodType      String    // "dry", "wet"
+  calculatedAt  DateTime  @default(now())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("feeding_records")
+}
+
+model Food {
+  id            String    @id @default(cuid())
+  name          String
+  manufacturer  String
+  category      String    // "puppy", "adult", "senior"
+  type          String    // "dry", "wet"
+  price         Float?
+  rating        Float?    @default(0)
+  reviewCount   Int       @default(0)
+  protein       Float?
+  fat           Float?
+  fiber         Float?
+  description   String?
+  imageUrl      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@map("foods")
+}
+
+model Event {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  location      String
+  prefecture    String
+  eventDate     DateTime
+  endDate       DateTime?
+  fee           String?
+  website       String?
+  contact       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@map("events")
+}
+
+model VaccineRecord {
+  id            String    @id @default(cuid())
+  vaccineName   String
+  vaccinatedAt  DateTime
+  nextDueDate   DateTime?
+  veterinary    String?
+  memo          String?
+  certificateUrl String?
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@map("vaccine_records")
+}
