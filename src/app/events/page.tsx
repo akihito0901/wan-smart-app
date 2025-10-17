@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Navigation } from '@/components/layout/navigation'
-import { Calendar, MapPin, DollarSign, ExternalLink, Filter, Clock } from 'lucide-react'
+import { Calendar, MapPin, DollarSign, ExternalLink, Filter } from 'lucide-react'
 
 interface Event {
   id: string
@@ -54,13 +54,7 @@ export default function Events() {
     }
   }, [session, status, router])
 
-  useEffect(() => {
-    if (session) {
-      fetchEvents()
-    }
-  }, [session, selectedPrefecture, sortBy])
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     setLoading(true)
     setError('')
 
@@ -82,12 +76,18 @@ export default function Events() {
       } else {
         setEvents(data.events)
       }
-    } catch (error) {
+    } catch {
       setError('イベント情報の取得に失敗しました')
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedPrefecture, sortBy])
+
+  useEffect(() => {
+    if (session) {
+      fetchEvents()
+    }
+  }, [session, fetchEvents])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -96,14 +96,6 @@ export default function Events() {
       month: 'long',
       day: 'numeric',
       weekday: 'short'
-    })
-  }
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleTimeString('ja-JP', {
-      hour: '2-digit',
-      minute: '2-digit'
     })
   }
 

@@ -32,7 +32,7 @@ export default function SignIn() {
           router.push('/dashboard')
         }
       }
-    } catch (error) {
+    } catch {
       setError('ログインに失敗しました')
     } finally {
       setIsLoading(false)

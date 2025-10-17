@@ -41,7 +41,7 @@ export default function SignUp() {
           router.push('/auth/signin')
         }, 2000)
       }
-    } catch (error) {
+    } catch {
       setError('登録に失敗しました')
     } finally {
       setIsLoading(false)
