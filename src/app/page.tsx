@@ -96,12 +96,12 @@ export default function Home() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 mb-6">
-            愛犬の健康管理を
-            <span className="text-indigo-600 block">もっとスマートに</span>
+            愛犬のこと、
+            <span className="text-indigo-600 block">ぜんぶここで。</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            給餌量の計算からワクチン記録まで、愛犬の健康管理に必要な機能をすべて一つのアプリに。
-            科学的根拠に基づいた情報で、愛犬との生活をより豊かにサポートします。
+            給餌量の計算からワクチン記録、イベント情報まで。愛犬との暮らしに必要な機能をすべて一つのアプリに。
+            科学的根拠に基づいた情報で、愛犬ライフをトータルサポートします。
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -128,7 +128,7 @@ export default function Home() {
               主な機能
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              愛犬の健康管理に必要な機能を厳選してお届けします
+              愛犬との暮らしに必要な機能を厳選してお届けします
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -205,7 +205,7 @@ export default function Home() {
           <div className="text-center">
             <div className="text-2xl font-bold mb-4">🐕 わんスマート</div>
             <p className="text-gray-400">
-              愛犬の健康管理をサポートするWebアプリケーション
+              愛犬との暮らしをトータルサポートするWebアプリケーション
             </p>
           </div>
         </div>
