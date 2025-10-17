@@ -1,4 +1,5 @@
-import NextAuth from 'next-auth'
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const NextAuth = require('next-auth').default
 import { authOptions } from '@/lib/auth'
 
 const handler = NextAuth(authOptions)
