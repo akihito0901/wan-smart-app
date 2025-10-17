@@ -1,9 +1,14 @@
 import CredentialsProvider from 'next-auth/providers/credentials'
+import GoogleProvider from 'next-auth/providers/google'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 
 export const authOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    }),
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -47,9 +52,41 @@ export const authOptions = {
   },
   callbacks: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    jwt: ({ token, user }: { token: any; user: any }) => {
+    async signIn({ user, account }: { user: any; account: any }) {
+      if (account?.provider === 'google') {
+        try {
+          // Google認証の場合、ユーザーをデータベースに保存または更新
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email }
+          })
+
+          if (!existingUser) {
+            await prisma.user.create({
+              data: {
+                email: user.email,
+                name: user.name,
+                password: '', // Googleログインの場合はパスワード不要
+              }
+            })
+          }
+          return true
+        } catch (error) {
+          console.error('Google sign in error:', error)
+          return false
+        }
+      }
+      return true
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    async jwt({ token, user }: { token: any; user: any }) {
       if (user) {
-        token.id = user.id
+        // データベースからユーザー情報を取得してIDを設定
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email }
+        })
+        if (dbUser) {
+          token.id = dbUser.id
+        }
       }
       return token
     },
