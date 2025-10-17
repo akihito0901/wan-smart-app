@@ -8,13 +8,13 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const sortBy = searchParams.get('sortBy') || 'eventDate'
 
-    const where: any = {}
+    const where: { prefecture?: string } = {}
     
     if (prefecture) {
       where.prefecture = prefecture
     }
 
-    let orderBy: any = {}
+    let orderBy: { eventDate?: 'asc' | 'desc'; createdAt?: 'asc' | 'desc' } = {}
     
     switch (sortBy) {
       case 'eventDate':

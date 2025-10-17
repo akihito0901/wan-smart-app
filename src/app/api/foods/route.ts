@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
     const sortBy = searchParams.get('sortBy') || 'rating' // rating, reviewCount, price
 
-    const where: any = {}
+    const where: { category?: string; type?: string } = {}
     
     if (category) {
       where.category = category
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       where.type = type
     }
 
-    let orderBy: any = {}
+    let orderBy: { rating?: 'asc' | 'desc'; reviewCount?: 'asc' | 'desc'; price?: 'asc' | 'desc' } = {}
     
     switch (sortBy) {
       case 'rating':
