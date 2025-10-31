@@ -123,6 +123,7 @@ function initializeAppAuth() {
                 console.log('ユーザーUID:', user.uid);
                 currentUser = user;
                 showMainApp();
+                initializeNewUser();
                 loadUserProfile();
                 loadFriends();
             } else {
@@ -381,23 +382,75 @@ async function signInWithGoogle() {
         console.error('ログインエラー詳細:', error);
         console.error('エラーコード:', error.code);
         console.error('エラーメッセージ:', error.message);
+        console.error('エラーの詳細情報:', {
+            code: error.code,
+            message: error.message,
+            customData: error.customData,
+            stack: error.stack
+        });
         
-        // より詳細なエラーメッセージを表示
         let errorMessage = 'ログインに失敗しました。';
-        if (error.code === 'auth/popup-closed-by-user') {
-            errorMessage = 'ログインがキャンセルされました。';
-        } else if (error.code === 'auth/popup-blocked') {
-            errorMessage = 'ポップアップがブロックされました。ブラウザの設定を確認してください。';
-        } else if (error.code === 'auth/cancelled-popup-request') {
-            errorMessage = 'ログイン処理がキャンセルされました。';
-        } else if (error.code === 'auth/unauthorized-domain') {
-            errorMessage = 'このドメインは認証が許可されていません。Firebase Consoleで承認済みドメインに追加してください。';
-        } else if (error.code === 'auth/operation-not-allowed') {
-            errorMessage = 'Googleログインが有効になっていません。Firebase Consoleで設定を確認してください。';
-        } else if (error.code === 'auth/configuration-not-found') {
-            errorMessage = 'Firebase設定が見つかりません。設定を確認してください。';
-        } else {
-            errorMessage = `ログインエラー: ${error.message}`;
+        let shouldRetry = false;
+        
+        // 詳細なエラーハンドリング（500エラー対応含む）
+        switch (error.code) {
+            case 'auth/popup-closed-by-user':
+                errorMessage = 'ログインがキャンセルされました。';
+                break;
+            case 'auth/popup-blocked':
+                errorMessage = 'ポップアップがブロックされました。ブラウザの設定を確認して、ポップアップを許可してください。';
+                break;
+            case 'auth/cancelled-popup-request':
+                errorMessage = 'ログイン処理がキャンセルされました。';
+                break;
+            case 'auth/unauthorized-domain':
+                errorMessage = `このドメイン（${window.location.hostname}）は認証が許可されていません。\n管理者にFirebase Consoleの承認済みドメインへの追加を依頼してください。\n現在のドメイン: ${window.location.origin}`;
+                console.error('Unauthorized domain details:', {
+                    currentDomain: window.location.hostname,
+                    currentOrigin: window.location.origin,
+                    authDomain: auth.config.authDomain
+                });
+                break;
+            case 'auth/operation-not-allowed':
+                errorMessage = 'Googleログインが有効になっていません。Firebase Consoleで設定を確認してください。';
+                break;
+            case 'auth/configuration-not-found':
+                errorMessage = 'Firebase設定が見つかりません。設定を確認してください。';
+                break;
+            case 'auth/network-request-failed':
+                errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください。';
+                shouldRetry = true;
+                break;
+            case 'auth/too-many-requests':
+                errorMessage = 'リクエストが多すぎます。しばらく待ってから再試行してください。';
+                shouldRetry = true;
+                break;
+            case 'auth/internal-error':
+                errorMessage = 'サーバー内部エラーが発生しました（500エラー）。しばらく待ってから再試行してください。';
+                shouldRetry = true;
+                break;
+            default:
+                // 500エラーやその他のサーバーエラーを検出
+                if (error.message && error.message.includes('500')) {
+                    errorMessage = 'サーバーエラー（500）が発生しました。サーバーが一時的に利用できません。しばらく待ってから再試行してください。';
+                    shouldRetry = true;
+                } else if (error.message && (error.message.includes('server') || error.message.includes('timeout'))) {
+                    errorMessage = 'サーバー接続エラーが発生しました。しばらく待ってから再試行してください。';
+                    shouldRetry = true;
+                } else {
+                    errorMessage = `ログインエラー: ${error.message}`;
+                }
+                break;
+        }
+        
+        // 再試行可能なエラーの場合は確認ダイアログを表示
+        if (shouldRetry) {
+            const retryMessage = '\n\n自動で再試行しますか？';
+            if (confirm(errorMessage + retryMessage)) {
+                console.log('Retrying Google sign-in...');
+                setTimeout(() => signInWithGoogle(), 2000); // 2秒後に再試行
+                return;
+            }
         }
         
         alert(errorMessage + ' もう一度お試しください。');
@@ -722,6 +775,51 @@ function showDogProfile(dog) {
 }
 
 // ユーザープロフィール読み込み
+// 新規ユーザーの初期化
+async function initializeNewUser() {
+    if (!currentUser) return;
+    
+    try {
+        const docRef = doc(db, 'users', currentUser.uid);
+        const docSnap = await getDoc(docRef);
+        
+        // ユーザー文書が存在しない場合（新規ユーザー）
+        if (!docSnap.exists()) {
+            console.log('新規ユーザーを検出、初期文書を作成します');
+            
+            const newUserData = {
+                uid: currentUser.uid,
+                email: currentUser.email,
+                displayName: currentUser.displayName || '',
+                userName: '',
+                dogName: '',
+                dogBreed: '',
+                dogBirthday: '',
+                dogGender: '',
+                dogPersonality: '',
+                avatarBase64: '',
+                avatarURL: currentUser.photoURL || '',
+                totalWalks: 0,
+                friendsCount: 0,
+                createdAt: serverTimestamp(),
+                lastLoginAt: serverTimestamp()
+            };
+            
+            await setDoc(docRef, newUserData);
+            console.log('新規ユーザー文書作成完了');
+        } else {
+            // 既存ユーザーの最終ログイン時刻を更新
+            await updateDoc(docRef, {
+                lastLoginAt: serverTimestamp()
+            });
+            console.log('既存ユーザーのログイン時刻を更新');
+        }
+    } catch (error) {
+        console.error('新規ユーザー初期化エラー:', error);
+        // エラーが発生しても処理を続行（プロフィール読み込みは別途試行）
+    }
+}
+
 async function loadUserProfile() {
     if (!currentUser) return;
     
