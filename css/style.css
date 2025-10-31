@@ -85,23 +85,18 @@ body {
   margin-bottom: var(--space-2xl);
 }
 
-.app-logo {
+.app-logo-main {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-sm);
   margin-bottom: var(--space-lg);
 }
 
-.app-logo i {
-  font-size: 2rem;
-  color: var(--white);
-}
-
-.app-logo span {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--white);
+.main-logo {
+  height: 80px;
+  width: auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.95;
 }
 
 .hero-title {

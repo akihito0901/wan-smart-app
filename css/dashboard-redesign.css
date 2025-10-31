@@ -28,15 +28,11 @@
   gap: var(--space-sm);
 }
 
-.app-logo-small i {
-  font-size: 1.5rem;
-  color: var(--white);
-}
-
-.app-logo-small span {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--white);
+.header-logo {
+  height: 32px;
+  width: auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
 }
 
 .header-right {
