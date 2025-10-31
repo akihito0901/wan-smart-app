@@ -299,23 +299,44 @@ async function saveProfile() {
     
     try {
         const docRef = db.collection('users').doc(currentUser.uid);
-        await docRef.update({
+        
+        // ドキュメントの存在確認
+        const docSnap = await docRef.get();
+        
+        const profileData = {
             dogName: dogName,
             dogBreed: dogBreed,
             dogBirthday: dogBirthday,
             dogGender: dogGender,
             dogWeight: dogWeight,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        };
         
-        console.log('✅ プロフィール保存完了');
-        alert('プロフィールを保存しました！');
+        if (docSnap.exists) {
+            // 既存ドキュメントを更新
+            await docRef.update(profileData);
+            console.log('✅ プロフィール更新完了');
+        } else {
+            // 新規ドキュメントを作成
+            const newUserData = {
+                uid: currentUser.uid,
+                email: currentUser.email,
+                displayName: currentUser.displayName || '',
+                ...profileData,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await docRef.set(newUserData);
+            console.log('✅ プロフィール新規作成完了');
+        }
+        
+        alert('愛犬のプロフィールを保存しました！🐕');
         
         await loadUserProfile();
         showMainScreen('dashboard');
     } catch (error) {
         console.error('❌ プロフィール保存エラー:', error);
-        alert('プロフィールの保存に失敗しました。');
+        console.error('エラー詳細:', error.code, error.message);
+        alert(`プロフィールの保存に失敗しました。\nエラー: ${error.message}`);
     }
 }
 
@@ -440,7 +461,14 @@ function setupEventListeners() {
     // プロフィール保存
     const saveProfileBtn = document.getElementById('save-profile');
     if (saveProfileBtn) {
-        saveProfileBtn.addEventListener('click', saveProfile);
+        console.log('✅ プロフィール保存ボタン見つかりました');
+        saveProfileBtn.addEventListener('click', (e) => {
+            console.log('🐕 プロフィール保存ボタンがクリックされました');
+            e.preventDefault();
+            saveProfile();
+        });
+    } else {
+        console.error('❌ プロフィール保存ボタンが見つかりません');
     }
     
     // アクションカード & フィーチャーカード
