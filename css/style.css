@@ -113,14 +113,23 @@ body {
   line-height: 1.5;
 }
 
-.dog-silhouette {
-  font-size: 4rem;
+.hero-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dog-illustration {
+  width: 120px;
+  height: auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
   animation: float 3s ease-in-out infinite;
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  50% { transform: translateY(-15px) rotate(2deg); }
 }
 
 .features-preview {
