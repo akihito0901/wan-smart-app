@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DogLife - 愛犬のいろいろ、これ1台。</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard-redesign.css">
     <!-- Firebase v9 SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -84,63 +85,102 @@
 
         <!-- ダッシュボード -->
         <div id="dashboard" class="main-content">
-            <div class="dashboard-header">
-                <div class="welcome-section">
-                    <h2 id="welcome-message">こんにちは！</h2>
-                    <p id="dog-info" class="dog-info"></p>
-                </div>
-                <div class="dog-avatar">
-                    <div id="dog-breed-icon" class="breed-icon">🐕</div>
-                </div>
-            </div>
-
-            <!-- クイックアクション -->
-            <div class="quick-actions">
-                <div class="action-card" data-action="food-calculator">
-                    <div class="action-icon">
-                        <i class="fas fa-calculator"></i>
-                    </div>
-                    <div class="action-content">
-                        <h3>餌量計算</h3>
-                        <p>体重・年齢から最適な餌量を計算</p>
-                    </div>
-                </div>
-                
-                <div class="action-card" data-action="vaccine-record">
-                    <div class="action-icon">
-                        <i class="fas fa-syringe"></i>
-                    </div>
-                    <div class="action-content">
-                        <h3>ワクチン記録</h3>
-                        <p>接種履歴・次回予定日を管理</p>
-                    </div>
-                </div>
-                
-                <div class="action-card" data-action="events">
-                    <div class="action-icon">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <div class="action-content">
-                        <h3>イベント情報</h3>
-                        <p>全国の犬関連イベントをチェック</p>
-                    </div>
-                </div>
-                
-                <div class="action-card" data-action="food-ranking">
-                    <div class="action-icon">
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <div class="action-content">
-                        <h3>フードランキング</h3>
-                        <p>人気ドッグフード・おすすめ商品</p>
+            <!-- ヒーローセクション -->
+            <div class="dashboard-hero">
+                <div class="hero-background">
+                    <div class="hero-overlay">
+                        <div class="welcome-content">
+                            <div class="greeting-section">
+                                <h1 id="welcome-message" class="hero-greeting">こんにちは！</h1>
+                                <p id="dog-info" class="dog-info-hero">プロフィールを設定してください</p>
+                            </div>
+                            <div class="dog-avatar-hero">
+                                <div id="dog-breed-icon" class="breed-icon-hero">🐕</div>
+                            </div>
+                        </div>
+                        <div class="quick-stats">
+                            <div class="stat-item">
+                                <div class="stat-number">0</div>
+                                <div class="stat-label">今月の散歩</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">0</div>
+                                <div class="stat-label">ワクチン記録</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">0</div>
+                                <div class="stat-label">イベント参加</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 今日のタスク -->
-            <div class="today-tasks">
-                <h3><i class="fas fa-tasks"></i> 今日のタスク</h3>
-                <div id="today-tasks-list" class="tasks-list">
+            <!-- メイン機能ナビゲーション -->
+            <div class="features-navigation">
+                <h2 class="section-title">愛犬のケアメニュー</h2>
+                <div class="feature-grid">
+                    <div class="feature-card primary" data-action="food-calculator">
+                        <div class="feature-icon-wrapper">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h3>餌量計算</h3>
+                            <p>体重・年齢に合わせた最適な餌量を自動計算</p>
+                        </div>
+                        <div class="feature-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card secondary" data-action="vaccine-record">
+                        <div class="feature-icon-wrapper">
+                            <i class="fas fa-syringe"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h3>ワクチン記録</h3>
+                            <p>接種履歴管理・次回予定日の通知</p>
+                        </div>
+                        <div class="feature-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card accent" data-action="events">
+                        <div class="feature-icon-wrapper">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h3>イベント情報</h3>
+                            <p>全国の犬関連イベント・ドッグラン情報</p>
+                        </div>
+                        <div class="feature-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card premium" data-action="food-ranking">
+                        <div class="feature-icon-wrapper">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h3>フードランキング</h3>
+                            <p>厳選ドッグフード・専門家おすすめ商品</p>
+                        </div>
+                        <div class="feature-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 今日のケアチェック -->
+            <div class="care-checklist">
+                <div class="section-header">
+                    <h3><i class="fas fa-check-circle"></i> 今日のケアチェック</h3>
+                    <p class="section-subtitle">愛犬の健康管理をサポート</p>
+                </div>
+                <div id="today-tasks-list" class="care-tasks">
                     <!-- 動的に追加 -->
                 </div>
             </div>

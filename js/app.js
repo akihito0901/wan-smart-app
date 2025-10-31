@@ -443,8 +443,8 @@ function setupEventListeners() {
         saveProfileBtn.addEventListener('click', saveProfile);
     }
     
-    // アクションカード
-    document.querySelectorAll('.action-card').forEach(card => {
+    // アクションカード & フィーチャーカード
+    document.querySelectorAll('.action-card, .feature-card').forEach(card => {
         card.addEventListener('click', () => {
             const action = card.dataset.action;
             showMainScreen(action);
