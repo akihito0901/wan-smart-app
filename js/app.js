@@ -8,13 +8,13 @@ import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase
 
 // Firebase設定
 const firebaseConfig = {
-    apiKey: "AIzaSyBu63l8Orqplq2EnLTkigilHQBeBpVvXLc",
-    authDomain: "gokinjosanpo.firebaseapp.com",
-    projectId: "gokinjosanpo",
-    storageBucket: "gokinjosanpo.firebasestorage.app",
-    messagingSenderId: "633353535199",
-    appId: "1:633353535199:web:8ed585c859d6bba57ab36a",
-    measurementId: "G-D14P7YT035"
+    apiKey: "AIzaSyBll0ydrEznuFn2E1ghHl-59fU5_h8uAHI",
+    authDomain: "wansmart-16538.firebaseapp.com",
+    projectId: "wansmart-16538",
+    storageBucket: "wansmart-16538.firebasestorage.app",
+    messagingSenderId: "402202482459",
+    appId: "1:402202482459:web:fc01c3293686566e56a5be",
+    measurementId: "G-L6MYJPKSNK"
 };
 
 // Firebase初期化
