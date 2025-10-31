@@ -1,4 +1,9 @@
-// Firebase v9 Compat SDK
+// Firebase v9 SDK imports
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, query, where, orderBy, getDocs, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js';
+
 // Firebase設定
 const firebaseConfig = {
     apiKey: "AIzaSyBll0ydrEznuFn2E1ghHl-59fU5_h8uAHI",
@@ -15,12 +20,12 @@ let app, auth, db, analytics;
 
 try {
     console.log('🐕 DogLife Firebase初期化開始...');
-    app = firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth();
-    db = firebase.firestore();
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
     
     try {
-        analytics = firebase.analytics();
+        analytics = getAnalytics(app);
         console.log('📊 Analytics初期化完了');
     } catch (analyticsError) {
         console.warn('Analytics初期化スキップ:', analyticsError.message);
@@ -64,6 +69,25 @@ const DOG_BREEDS = [
     { id: 'bichon-frise', name: 'ビション・フリーゼ', emoji: '🐕', size: 'small' },
     { id: 'min-pin', name: 'ミニチュア・ピンシャー', emoji: '🐕', size: 'small' },
     { id: 'whippet', name: 'ウィペット', emoji: '🐕', size: 'medium' },
+    { id: 'basenji', name: 'バセンジー', emoji: '🐕', size: 'medium' },
+    { id: 'australian-shepherd', name: 'オーストラリアンシェパード', emoji: '🐕', size: 'large' },
+    { id: 'bernese', name: 'バーニーズマウンテンドッグ', emoji: '🐕', size: 'large' },
+    { id: 'saint-bernard', name: 'セントバーナード', emoji: '🐕', size: 'large' },
+    { id: 'great-dane', name: 'グレートデーン', emoji: '🐕', size: 'large' },
+    { id: 'doberman', name: 'ドーベルマン', emoji: '🐕', size: 'large' },
+    { id: 'rottweiler', name: 'ロットワイラー', emoji: '🐕', size: 'large' },
+    { id: 'mastiff', name: 'マスティフ', emoji: '🐕', size: 'large' },
+    { id: 'newfoundland', name: 'ニューファンドランド', emoji: '🐕', size: 'large' },
+    { id: 'great-pyrenees', name: 'グレートピレニーズ', emoji: '🐕', size: 'large' },
+    { id: 'afghan-hound', name: 'アフガンハウンド', emoji: '🐕', size: 'large' },
+    { id: 'saluki', name: 'サルーキ', emoji: '🐕', size: 'large' },
+    { id: 'greyhound', name: 'グレーハウンド', emoji: '🐕', size: 'large' },
+    { id: 'irish-setter', name: 'アイリッシュセッター', emoji: '🐕', size: 'large' },
+    { id: 'weimaraner', name: 'ワイマラナー', emoji: '🐕', size: 'large' },
+    { id: 'vizsla', name: 'ビズラ', emoji: '🐕', size: 'large' },
+    { id: 'pointer', name: 'ポインター', emoji: '🐕', size: 'large' },
+    { id: 'setter', name: 'セッター', emoji: '🐕', size: 'large' },
+    { id: 'spaniel', name: 'スパニエル', emoji: '🐕', size: 'medium' },
     { id: 'mixed', name: 'ミックス・その他', emoji: '🐕', size: 'medium' }
 ];
 
@@ -131,12 +155,19 @@ const DOG_FOOD_RANKING = {
 let currentUser = null;
 let currentScreen = 'login';
 
+// DOM要素
+const loginScreen = document.getElementById('login-screen');
+const mainApp = document.getElementById('main-app');
+const modal = document.getElementById('modal-overlay');
+
 // 画面管理
 function showScreen(screenId) {
+    // 全ての画面を非表示
     document.querySelectorAll('.screen').forEach(screen => {
         screen.classList.add('hidden');
     });
     
+    // 指定された画面を表示
     const targetScreen = document.getElementById(screenId);
     if (targetScreen) {
         targetScreen.classList.remove('hidden');
@@ -146,6 +177,13 @@ function showScreen(screenId) {
 
 function showMainScreen(screenId = 'dashboard') {
     showScreen('main-app');
+    
+    // メインアプリ内の画面切り替え
+    document.querySelectorAll('#main-app .screen').forEach(screen => {
+        if (screen.id !== 'main-app') {
+            screen.classList.add('hidden');
+        }
+    });
     
     document.querySelectorAll('#main-app > div').forEach(div => {
         div.classList.add('hidden');
@@ -160,22 +198,27 @@ function showMainScreen(screenId = 'dashboard') {
 // 認証関連
 async function signInWithGoogle() {
     if (!auth) {
+        console.error('Firebase Authが初期化されていません');
         alert('認証システムの初期化に失敗しました。ページを再読み込みしてください。');
         return;
     }
 
-    const provider = new firebase.auth.GoogleAuthProvider();
+    const provider = new GoogleAuthProvider();
     provider.addScope('email');
     provider.addScope('profile');
     
     try {
         console.log('🔐 Googleログイン開始');
-        const result = await auth.signInWithPopup(provider);
+        console.log('現在のURL:', window.location.href);
+        
+        const result = await signInWithPopup(auth, provider);
         console.log('✅ ログイン成功:', result.user.displayName);
     } catch (error) {
         console.error('❌ ログインエラー:', error);
         
         let errorMessage = 'ログインに失敗しました。';
+        let shouldRetry = false;
+        
         switch (error.code) {
             case 'auth/popup-closed-by-user':
                 errorMessage = 'ログインがキャンセルされました。';
@@ -184,19 +227,41 @@ async function signInWithGoogle() {
                 errorMessage = 'ポップアップがブロックされました。ブラウザの設定を確認してください。';
                 break;
             case 'auth/unauthorized-domain':
-                errorMessage = `このドメインは認証が許可されていません。`;
+                errorMessage = `このドメイン（${window.location.hostname}）は認証が許可されていません。`;
+                break;
+            case 'auth/network-request-failed':
+                errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください。';
+                shouldRetry = true;
+                break;
+            case 'auth/internal-error':
+                errorMessage = 'サーバー内部エラーが発生しました。しばらく待ってから再試行してください。';
+                shouldRetry = true;
                 break;
             default:
-                errorMessage = `ログインエラー: ${error.message}`;
+                if (error.message && error.message.includes('500')) {
+                    errorMessage = 'サーバーエラー（500）が発生しました。しばらく待ってから再試行してください。';
+                    shouldRetry = true;
+                } else {
+                    errorMessage = `ログインエラー: ${error.message}`;
+                }
                 break;
         }
-        alert(errorMessage);
+        
+        if (shouldRetry) {
+            const retryMessage = '\n\n自動で再試行しますか？';
+            if (confirm(errorMessage + retryMessage)) {
+                setTimeout(() => signInWithGoogle(), 2000);
+                return;
+            }
+        }
+        
+        alert(errorMessage + ' もう一度お試しください。');
     }
 }
 
 async function logout() {
     try {
-        await auth.signOut();
+        await signOut(auth);
         console.log('👋 ログアウトしました');
         showScreen('login-screen');
     } catch (error) {
@@ -209,10 +274,10 @@ async function initializeNewUser() {
     if (!currentUser) return;
     
     try {
-        const docRef = db.collection('users').doc(currentUser.uid);
-        const docSnap = await docRef.get();
+        const docRef = doc(db, 'users', currentUser.uid);
+        const docSnap = await getDoc(docRef);
         
-        if (!docSnap.exists) {
+        if (!docSnap.exists()) {
             console.log('🐕 新規ユーザーを検出、初期文書を作成します');
             
             const newUserData = {
@@ -224,15 +289,15 @@ async function initializeNewUser() {
                 dogBirthday: '',
                 dogGender: '',
                 dogWeight: 0,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
+                createdAt: serverTimestamp(),
+                lastLoginAt: serverTimestamp()
             };
             
-            await docRef.set(newUserData);
+            await setDoc(docRef, newUserData);
             console.log('✅ 新規ユーザー文書作成完了');
         } else {
-            await docRef.update({
-                lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
+            await updateDoc(docRef, {
+                lastLoginAt: serverTimestamp()
             });
             console.log('🔄 既存ユーザーのログイン時刻を更新');
         }
@@ -246,12 +311,13 @@ async function loadUserProfile() {
     if (!currentUser) return;
     
     try {
-        const docRef = db.collection('users').doc(currentUser.uid);
-        const docSnap = await docRef.get();
+        const docRef = doc(db, 'users', currentUser.uid);
+        const docSnap = await getDoc(docRef);
         
-        if (docSnap.exists) {
+        if (docSnap.exists()) {
             const data = docSnap.data();
             
+            // ダッシュボード表示更新
             document.getElementById('welcome-message').textContent = `こんにちは、${data.dogName || currentUser.displayName || 'ワンちゃん'}！`;
             
             if (data.dogName && data.dogBreed) {
@@ -265,6 +331,7 @@ async function loadUserProfile() {
                 document.getElementById('dog-info').textContent = 'プロフィールを設定してください';
             }
             
+            // プロフィールフォームに値を設定
             if (document.getElementById('dog-name')) {
                 document.getElementById('dog-name').value = data.dogName || '';
                 document.getElementById('dog-breed').value = data.dogBreed || '';
@@ -298,19 +365,20 @@ async function saveProfile() {
     }
     
     try {
-        const docRef = db.collection('users').doc(currentUser.uid);
-        await docRef.update({
+        const docRef = doc(db, 'users', currentUser.uid);
+        await updateDoc(docRef, {
             dogName: dogName,
             dogBreed: dogBreed,
             dogBirthday: dogBirthday,
             dogGender: dogGender,
             dogWeight: dogWeight,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            updatedAt: serverTimestamp()
         });
         
         console.log('✅ プロフィール保存完了');
         alert('プロフィールを保存しました！');
         
+        // ダッシュボードを更新
         await loadUserProfile();
         showMainScreen('dashboard');
     } catch (error) {
@@ -330,13 +398,16 @@ function calculateFoodAmount() {
         return;
     }
     
+    // 基本カロリー計算（RER: Resting Energy Requirement）
     let rer = 70 * Math.pow(weight, 0.75);
-    let multiplier = 1.8;
+    
+    // 年齢・活動レベル係数
+    let multiplier = 1.8; // 成犬・普通の活動レベル
     
     if (ageCategory === 'puppy') {
-        multiplier = 3.0;
+        multiplier = 3.0; // 子犬
     } else if (ageCategory === 'senior') {
-        multiplier = 1.4;
+        multiplier = 1.4; // シニア犬
     }
     
     if (activityLevel === 'low') {
@@ -346,30 +417,155 @@ function calculateFoodAmount() {
     }
     
     const dailyCalories = rer * multiplier;
+    
+    // ドライフードの平均カロリー密度（350kcal/100g）で計算
     const dailyAmount = Math.round((dailyCalories / 350) * 100);
     const morningAmount = Math.round(dailyAmount * 0.5);
     const eveningAmount = dailyAmount - morningAmount;
     
+    // 結果表示
     document.getElementById('daily-amount').textContent = dailyAmount;
     document.getElementById('morning-amount').textContent = morningAmount + 'g';
     document.getElementById('evening-amount').textContent = eveningAmount + 'g';
     document.getElementById('food-result').classList.remove('hidden');
     
-    console.log(`🥘 餌量計算結果: ${dailyAmount}g/日`);
+    console.log(`🥘 餌量計算結果: ${dailyAmount}g/日 (体重${weight}kg, ${ageCategory}, ${activityLevel})`);
 }
 
-// 犬種選択肢を生成
-function populateDogBreedOptions() {
-    const select = document.getElementById('dog-breed');
-    if (!select) return;
+// ワクチン記録
+async function loadVaccineRecords() {
+    if (!currentUser) return;
     
-    select.innerHTML = '<option value="">犬種を選択してください</option>';
-    DOG_BREEDS.forEach(breed => {
-        const option = document.createElement('option');
-        option.value = breed.id;
-        option.textContent = `${breed.emoji} ${breed.name}`;
-        select.appendChild(option);
+    try {
+        const q = query(
+            collection(db, 'vaccines'),
+            where('userId', '==', currentUser.uid),
+            orderBy('date', 'desc')
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const vaccineList = document.getElementById('vaccine-list');
+        
+        if (querySnapshot.empty) {
+            vaccineList.innerHTML = '<div class="empty-state">ワクチン記録がありません。追加ボタンから記録を開始しましょう。</div>';
+            return;
+        }
+        
+        vaccineList.innerHTML = '';
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const vaccineCard = createVaccineCard(doc.id, data);
+            vaccineList.appendChild(vaccineCard);
+        });
+        
+    } catch (error) {
+        console.error('❌ ワクチン記録読み込みエラー:', error);
+    }
+}
+
+function createVaccineCard(id, data) {
+    const card = document.createElement('div');
+    card.className = 'vaccine-card';
+    card.innerHTML = `
+        <div class="vaccine-info">
+            <h4>${data.vaccineName}</h4>
+            <p>接種日: ${data.date}</p>
+            <p>次回予定: ${data.nextDate || '未設定'}</p>
+            ${data.notes ? `<p class="notes">${data.notes}</p>` : ''}
+        </div>
+        <div class="vaccine-actions">
+            <button onclick="editVaccine('${id}')" class="edit-btn">編集</button>
+            <button onclick="deleteVaccine('${id}')" class="delete-btn">削除</button>
+        </div>
+    `;
+    return card;
+}
+
+async function addVaccine() {
+    const vaccineName = prompt('ワクチン名を入力してください:');
+    if (!vaccineName) return;
+    
+    const date = prompt('接種日を入力してください (YYYY-MM-DD):');
+    if (!date) return;
+    
+    const nextDate = prompt('次回予定日を入力してください (YYYY-MM-DD, 任意):');
+    const notes = prompt('メモ (任意):');
+    
+    try {
+        await addDoc(collection(db, 'vaccines'), {
+            userId: currentUser.uid,
+            vaccineName: vaccineName,
+            date: date,
+            nextDate: nextDate || '',
+            notes: notes || '',
+            createdAt: serverTimestamp()
+        });
+        
+        console.log('✅ ワクチン記録追加完了');
+        loadVaccineRecords();
+    } catch (error) {
+        console.error('❌ ワクチン記録追加エラー:', error);
+        alert('ワクチン記録の追加に失敗しました。');
+    }
+}
+
+// イベント情報（サンプルデータ）
+const DOG_EVENTS = [
+    {
+        id: 1,
+        title: '東京ドッグショー 2024',
+        date: '2024-12-15',
+        location: '東京ビッグサイト',
+        category: 'show',
+        description: '日本最大級のドッグショー。様々な犬種が集まります。',
+        url: 'https://example.com/dog-show'
+    },
+    {
+        id: 2,
+        title: 'パピートレーニング教室',
+        date: '2024-12-08',
+        location: '渋谷ペットスクール',
+        category: 'training',
+        description: '子犬向けの基本的なしつけ教室です。',
+        url: 'https://example.com/puppy-training'
+    },
+    {
+        id: 3,
+        title: '代々木公園ドッグオフ会',
+        date: '2024-12-10',
+        location: '代々木公園',
+        category: 'meet',
+        description: '同じ犬種の飼い主同士の交流会です。',
+        url: 'https://example.com/dog-meetup'
+    }
+];
+
+function loadEvents(filter = 'all') {
+    const eventsList = document.getElementById('events-list');
+    const filteredEvents = filter === 'all' ? DOG_EVENTS : DOG_EVENTS.filter(event => event.category === filter);
+    
+    eventsList.innerHTML = '';
+    filteredEvents.forEach(event => {
+        const eventCard = createEventCard(event);
+        eventsList.appendChild(eventCard);
     });
+}
+
+function createEventCard(event) {
+    const card = document.createElement('div');
+    card.className = 'event-card';
+    card.innerHTML = `
+        <div class="event-info">
+            <h4>${event.title}</h4>
+            <p class="event-date">📅 ${event.date}</p>
+            <p class="event-location">📍 ${event.location}</p>
+            <p class="event-description">${event.description}</p>
+        </div>
+        <div class="event-actions">
+            <button onclick="window.open('${event.url}', '_blank')" class="primary-btn">詳細を見る</button>
+        </div>
+    `;
+    return card;
 }
 
 // フードランキング
@@ -408,21 +604,52 @@ function createFoodCard(food, rank) {
     return card;
 }
 
+// 今日のタスク生成
+function generateTodayTasks() {
+    const tasksList = document.getElementById('today-tasks-list');
+    const tasks = [];
+    
+    // ユーザーの犬の情報に基づいてタスクを生成
+    if (currentUser) {
+        tasks.push('💧 新鮮な水を用意する');
+        tasks.push('🥘 朝食をあげる');
+        tasks.push('🚶‍♂️ 散歩に行く');
+        tasks.push('🧸 一緒に遊ぶ');
+    }
+    
+    if (tasks.length === 0) {
+        tasksList.innerHTML = '<div class="empty-state">今日のタスクはありません</div>';
+        return;
+    }
+    
+    tasksList.innerHTML = tasks.map(task => `
+        <div class="task-item">
+            <input type="checkbox" class="task-checkbox">
+            <span class="task-text">${task}</span>
+        </div>
+    `).join('');
+}
+
+// 犬種選択肢を生成
+function populateDogBreedOptions() {
+    const select = document.getElementById('dog-breed');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">犬種を選択してください</option>';
+    DOG_BREEDS.forEach(breed => {
+        const option = document.createElement('option');
+        option.value = breed.id;
+        option.textContent = `${breed.emoji} ${breed.name}`;
+        select.appendChild(option);
+    });
+}
+
 // イベントリスナー設定
 function setupEventListeners() {
-    console.log('📱 イベントリスナー設定開始');
-    
     // Googleログイン
     const googleLoginBtn = document.getElementById('google-login-btn');
     if (googleLoginBtn) {
-        console.log('✅ Googleログインボタン見つかりました');
-        googleLoginBtn.addEventListener('click', (e) => {
-            console.log('🔐 ログインボタンがクリックされました');
-            e.preventDefault();
-            signInWithGoogle();
-        });
-    } else {
-        console.error('❌ Googleログインボタンが見つかりません');
+        googleLoginBtn.addEventListener('click', signInWithGoogle);
     }
     
     // ログアウト
@@ -449,7 +676,12 @@ function setupEventListeners() {
             const action = card.dataset.action;
             showMainScreen(action);
             
-            if (action === 'food-ranking') {
+            // 各画面のデータロード
+            if (action === 'vaccine-record') {
+                loadVaccineRecords();
+            } else if (action === 'events') {
+                loadEvents();
+            } else if (action === 'food-ranking') {
                 loadFoodRanking();
             }
         });
@@ -466,6 +698,22 @@ function setupEventListeners() {
         calculateBtn.addEventListener('click', calculateFoodAmount);
     }
     
+    // ワクチン追加
+    const addVaccineBtn = document.getElementById('add-vaccine');
+    if (addVaccineBtn) {
+        addVaccineBtn.addEventListener('click', addVaccine);
+    }
+    
+    // イベントフィルター
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const filter = tab.dataset.filter;
+            loadEvents(filter);
+        });
+    });
+    
     // フードランキングカテゴリ
     document.querySelectorAll('.category-tab').forEach(tab => {
         tab.addEventListener('click', () => {
@@ -476,7 +724,22 @@ function setupEventListeners() {
         });
     });
     
-    console.log('✅ イベントリスナー設定完了');
+    // モーダル閉じる
+    const modalClose = document.getElementById('modal-close');
+    if (modalClose) {
+        modalClose.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+    }
+    
+    // モーダル外クリックで閉じる
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+    }
 }
 
 // アプリ初期化
@@ -490,16 +753,23 @@ function initializeApp() {
     }
     
     // 認証状態の監視
-    auth.onAuthStateChanged(async (user) => {
+    onAuthStateChanged(auth, async (user) => {
         console.log('🔄 認証状態変更:', user ? 'ログイン中' : 'ログアウト中');
         
         if (user) {
             console.log('👤 ユーザー:', user.displayName, user.email);
             currentUser = user;
             
+            // 新規ユーザー初期化
             await initializeNewUser();
+            
+            // プロフィール読み込み
             await loadUserProfile();
             
+            // 今日のタスク生成
+            generateTodayTasks();
+            
+            // メインアプリ表示
             showMainScreen('dashboard');
         } else {
             console.log('👋 ログアウト状態');
@@ -514,8 +784,13 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📱 DOMContentLoaded発火');
     
     try {
+        // 犬種選択肢を生成
         populateDogBreedOptions();
+        
+        // イベントリスナー設定
         setupEventListeners();
+        
+        // アプリ初期化
         initializeApp();
         
         console.log('✅ DogLife初期化完了');
@@ -524,3 +799,23 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('アプリの初期化中にエラーが発生しました: ' + error.message);
     }
 });
+
+// グローバル関数（HTML内から呼び出し用）
+window.editVaccine = async function(id) {
+    // ワクチン編集機能（モーダルで実装予定）
+    console.log('編集:', id);
+    alert('編集機能は近日実装予定です');
+};
+
+window.deleteVaccine = async function(id) {
+    if (!confirm('この記録を削除しますか？')) return;
+    
+    try {
+        await deleteDoc(doc(db, 'vaccines', id));
+        console.log('✅ ワクチン記録削除完了');
+        loadVaccineRecords();
+    } catch (error) {
+        console.error('❌ ワクチン記録削除エラー:', error);
+        alert('削除に失敗しました。');
+    }
+};
