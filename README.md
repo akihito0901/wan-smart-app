@@ -52,7 +52,7 @@
 
 ## 🌐 デプロイ
 
-**本番環境**: https://wansmart.vercel.app/
+**本番環境**: https://wan-smart-app.vercel.app/
 
 ## 🛠️ 技術スタック
 
@@ -91,7 +91,7 @@ cd wansmart
 1. Firebase Console → プロジェクト作成
 2. Authentication → Googleログイン有効化
 3. Firestore → データベース作成
-4. 承認済みドメイン → `wansmart.vercel.app` 追加
+4. 承認済みドメイン → `wan-smart-app.vercel.app` 追加
 
 ### 3. Vercelデプロイ
 ```bash
