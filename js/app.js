@@ -249,33 +249,106 @@ async function loadUserProfile() {
         const docRef = db.collection('users').doc(currentUser.uid);
         const docSnap = await docRef.get();
         
+        const dashboardHero = document.querySelector('.dashboard-hero');
+        const setupBtn = document.getElementById('setup-profile-btn');
+        const profileAvatar = document.getElementById('profile-avatar');
+        const emojiPlaceholder = document.querySelector('.emoji-placeholder');
+        
         if (docSnap.exists) {
             const data = docSnap.data();
             
             document.getElementById('welcome-message').textContent = `こんにちは、${data.dogName || currentUser.displayName || 'ワンちゃん'}！`;
             
             if (data.dogName && data.dogBreed) {
+                // プロフィール完了状態
                 const breed = DOG_BREEDS.find(b => b.id === data.dogBreed);
                 const breedName = breed ? breed.name : data.dogBreed;
                 const emoji = breed ? breed.emoji : '🐕';
                 
                 document.getElementById('dog-info').textContent = `${data.dogName} (${breedName})`;
-                document.getElementById('dog-breed-icon').textContent = emoji;
+                
+                // プロフィール画像またはemoji表示
+                if (data.profileImage) {
+                    profileAvatar.src = data.profileImage;
+                    profileAvatar.classList.remove('hidden');
+                    emojiPlaceholder.style.display = 'none';
+                } else {
+                    emojiPlaceholder.textContent = emoji;
+                    profileAvatar.classList.add('hidden');
+                    emojiPlaceholder.style.display = 'block';
+                }
+                
+                // ヒーロー部分にプロフィール完了クラスを追加
+                if (dashboardHero) {
+                    dashboardHero.classList.add('profile-complete');
+                }
             } else {
+                // プロフィール未完了状態
                 document.getElementById('dog-info').textContent = 'プロフィールを設定してください';
+                emojiPlaceholder.textContent = '🐕';
+                profileAvatar.classList.add('hidden');
+                emojiPlaceholder.style.display = 'block';
+                
+                if (dashboardHero) {
+                    dashboardHero.classList.remove('profile-complete');
+                }
             }
             
+            // フォーム入力値の設定
             if (document.getElementById('dog-name')) {
                 document.getElementById('dog-name').value = data.dogName || '';
                 document.getElementById('dog-breed').value = data.dogBreed || '';
                 document.getElementById('dog-birthday').value = data.dogBirthday || '';
                 document.getElementById('dog-gender').value = data.dogGender || '';
                 document.getElementById('dog-current-weight').value = data.dogWeight || '';
+                
+                // プロフィール画像の設定
+                const previewImg = document.getElementById('preview-img');
+                const uploadPlaceholder = document.querySelector('.upload-placeholder');
+                if (data.profileImage && previewImg && uploadPlaceholder) {
+                    previewImg.src = data.profileImage;
+                    previewImg.classList.remove('hidden');
+                    uploadPlaceholder.style.display = 'none';
+                } else if (previewImg && uploadPlaceholder) {
+                    previewImg.classList.add('hidden');
+                    uploadPlaceholder.style.display = 'block';
+                }
+            }
+        } else {
+            // 新規ユーザー
+            document.getElementById('dog-info').textContent = 'プロフィールを設定してください';
+            emojiPlaceholder.textContent = '🐕';
+            profileAvatar.classList.add('hidden');
+            emojiPlaceholder.style.display = 'block';
+            
+            if (dashboardHero) {
+                dashboardHero.classList.remove('profile-complete');
             }
         }
     } catch (error) {
         console.error('❌ プロフィール読み込みエラー:', error);
     }
+}
+
+// 画像アップロード処理
+function handleImageUpload(file) {
+    if (file.size > 2 * 1024 * 1024) { // 2MB制限
+        alert('画像サイズは2MB以下にしてください');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const previewImg = document.getElementById('preview-img');
+        const uploadPlaceholder = document.querySelector('.upload-placeholder');
+        
+        if (previewImg && uploadPlaceholder) {
+            previewImg.src = e.target.result;
+            previewImg.classList.remove('hidden');
+            uploadPlaceholder.style.display = 'none';
+        }
+    };
+    reader.readAsDataURL(file);
 }
 
 async function saveProfile() {
@@ -286,6 +359,7 @@ async function saveProfile() {
     const dogBirthday = document.getElementById('dog-birthday').value;
     const dogGender = document.getElementById('dog-gender').value;
     const dogWeight = parseFloat(document.getElementById('dog-current-weight').value) || 0;
+    const previewImg = document.getElementById('preview-img');
     
     if (!dogName) {
         alert('愛犬の名前を入力してください');
@@ -312,6 +386,11 @@ async function saveProfile() {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
         
+        // プロフィール画像がある場合は追加
+        if (previewImg && !previewImg.classList.contains('hidden')) {
+            profileData.profileImage = previewImg.src;
+        }
+        
         if (docSnap.exists) {
             // 既存ドキュメントを更新
             await docRef.update(profileData);
@@ -331,6 +410,7 @@ async function saveProfile() {
         
         alert('愛犬のプロフィールを保存しました！🐕');
         
+        // プロフィールを再読み込みしてダッシュボードを更新
         await loadUserProfile();
         showMainScreen('dashboard');
     } catch (error) {
@@ -506,6 +586,40 @@ function setupEventListeners() {
         profileBtn.addEventListener('click', () => showMainScreen('profile-screen'));
     }
     
+    // プロフィール設定ボタン
+    const setupProfileBtn = document.getElementById('setup-profile-btn');
+    if (setupProfileBtn) {
+        setupProfileBtn.addEventListener('click', () => showMainScreen('profile-screen'));
+    }
+    
+    // プロフィール画像アップロード
+    const imagePreview = document.getElementById('image-preview');
+    const imageInput = document.getElementById('profile-image-input');
+    const previewImg = document.getElementById('preview-img');
+    
+    if (imagePreview && imageInput) {
+        imagePreview.addEventListener('click', () => {
+            imageInput.click();
+        });
+        
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageUpload(file);
+            }
+        });
+    }
+    
+    // 通知ボタン
+    const notificationsBtn = document.getElementById('notifications-btn');
+    if (notificationsBtn) {
+        notificationsBtn.addEventListener('click', () => {
+            showMainScreen('vaccine-record');
+            loadVaccineRecords();
+            checkVaccineNotifications();
+        });
+    }
+    
     // プロフィール保存
     const saveProfileBtn = document.getElementById('save-profile');
     if (saveProfileBtn) {
@@ -527,6 +641,11 @@ function setupEventListeners() {
             
             if (action === 'food-ranking') {
                 loadFoodRanking();
+            }
+            
+            if (action === 'vaccine-record') {
+                loadVaccineRecords();
+                checkVaccineNotifications();
             }
         });
     });
@@ -552,8 +671,356 @@ function setupEventListeners() {
         });
     });
     
+    // ワクチン関連イベント
+    setupVaccineEventListeners();
+    
     console.log('✅ イベントリスナー設定完了');
 }
+
+// ワクチン関連イベントリスナー設定
+function setupVaccineEventListeners() {
+    // ワクチン追加ボタン
+    const addVaccineBtn = document.getElementById('add-vaccine');
+    if (addVaccineBtn) {
+        addVaccineBtn.addEventListener('click', () => {
+            document.getElementById('vaccine-modal').classList.remove('hidden');
+            resetVaccineForm();
+        });
+    }
+    
+    // モーダル関連
+    const vaccineModal = document.getElementById('vaccine-modal');
+    const vaccineModalClose = document.getElementById('vaccine-modal-close');
+    const cancelVaccine = document.getElementById('cancel-vaccine');
+    
+    if (vaccineModalClose) {
+        vaccineModalClose.addEventListener('click', closeVaccineModal);
+    }
+    
+    if (cancelVaccine) {
+        cancelVaccine.addEventListener('click', closeVaccineModal);
+    }
+    
+    if (vaccineModal) {
+        vaccineModal.addEventListener('click', (e) => {
+            if (e.target === vaccineModal) {
+                closeVaccineModal();
+            }
+        });
+    }
+    
+    // ワクチン種類変更
+    const vaccineType = document.getElementById('vaccine-type');
+    if (vaccineType) {
+        vaccineType.addEventListener('change', toggleMixedVaccineOptions);
+    }
+    
+    // フォーム送信
+    const vaccineForm = document.getElementById('vaccine-form');
+    if (vaccineForm) {
+        vaccineForm.addEventListener('submit', handleVaccineSubmit);
+    }
+    
+    // ワクチンタブ
+    document.querySelectorAll('.vaccine-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.vaccine-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const filterType = tab.dataset.type;
+            loadVaccineRecords(filterType);
+        });
+    });
+}
+
+// ワクチンモーダル関連関数
+function closeVaccineModal() {
+    document.getElementById('vaccine-modal').classList.add('hidden');
+    resetVaccineForm();
+}
+
+function resetVaccineForm() {
+    document.getElementById('vaccine-form').reset();
+    document.getElementById('mixed-vaccine-options').classList.add('hidden');
+}
+
+function toggleMixedVaccineOptions() {
+    const vaccineType = document.getElementById('vaccine-type').value;
+    const mixedOptions = document.getElementById('mixed-vaccine-options');
+    
+    if (vaccineType === 'mixed') {
+        mixedOptions.classList.remove('hidden');
+    } else {
+        mixedOptions.classList.add('hidden');
+    }
+}
+
+// ワクチンフォーム送信処理
+async function handleVaccineSubmit(e) {
+    e.preventDefault();
+    
+    if (!currentUser) {
+        alert('ログインが必要です');
+        return;
+    }
+    
+    const vaccineType = document.getElementById('vaccine-type').value;
+    const vaccineDate = document.getElementById('vaccine-date').value;
+    const clinicName = document.getElementById('clinic-name').value.trim();
+    const vaccineMemo = document.getElementById('vaccine-memo').value.trim();
+    
+    if (!vaccineType || !vaccineDate) {
+        alert('ワクチン種類と接種日を入力してください');
+        return;
+    }
+    
+    let mixedCount = null;
+    if (vaccineType === 'mixed') {
+        mixedCount = document.getElementById('mixed-vaccine-count').value;
+        if (!mixedCount) {
+            alert('混合ワクチンの種類を選択してください');
+            return;
+        }
+    }
+    
+    try {
+        const vaccineData = {
+            userId: currentUser.uid,
+            type: vaccineType,
+            date: vaccineDate,
+            mixedCount: mixedCount,
+            clinicName: clinicName,
+            memo: vaccineMemo,
+            nextDue: calculateNextVaccineDate(vaccineDate, vaccineType),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        await db.collection('vaccines').add(vaccineData);
+        
+        alert('ワクチン記録を保存しました！');
+        closeVaccineModal();
+        loadVaccineRecords();
+        checkVaccineNotifications();
+        
+    } catch (error) {
+        console.error('❌ ワクチン記録保存エラー:', error);
+        alert('ワクチン記録の保存に失敗しました');
+    }
+}
+
+// 次回ワクチン日計算
+function calculateNextVaccineDate(vaccineDate, vaccineType) {
+    const date = new Date(vaccineDate);
+    const interval = VACCINE_TYPES[vaccineType]?.interval || 365;
+    date.setDate(date.getDate() + interval);
+    return date.toISOString().split('T')[0];
+}
+
+// ワクチン記録読み込み
+async function loadVaccineRecords(filterType = 'all') {
+    if (!currentUser) return;
+    
+    try {
+        let query = db.collection('vaccines')
+            .where('userId', '==', currentUser.uid)
+            .orderBy('date', 'desc');
+            
+        if (filterType !== 'all') {
+            query = query.where('type', '==', filterType);
+        }
+        
+        const snapshot = await query.get();
+        const vaccineList = document.getElementById('vaccine-list');
+        
+        if (snapshot.empty) {
+            vaccineList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">💉</div>
+                    <h3>ワクチン記録がありません</h3>
+                    <p>右上の+ボタンからワクチン接種記録を追加してください</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        snapshot.forEach(doc => {
+            const vaccine = doc.data();
+            html += createVaccineItemHTML(vaccine, doc.id);
+        });
+        
+        vaccineList.innerHTML = html;
+        
+    } catch (error) {
+        console.error('❌ ワクチン記録読み込みエラー:', error);
+    }
+}
+
+// ワクチンアイテムHTML生成
+function createVaccineItemHTML(vaccine, docId) {
+    const vaccineInfo = VACCINE_TYPES[vaccine.type];
+    const vaccineDate = new Date(vaccine.date);
+    const nextDueDate = new Date(vaccine.nextDue);
+    const today = new Date();
+    const daysUntilDue = Math.ceil((nextDueDate - today) / (1000 * 60 * 60 * 24));
+    
+    let daysRemainingClass = '';
+    let daysText = '';
+    
+    if (daysUntilDue < 0) {
+        daysText = `${Math.abs(daysUntilDue)}日過ぎ`;
+        daysRemainingClass = 'urgent';
+    } else if (daysUntilDue <= 30) {
+        daysText = `あと${daysUntilDue}日`;
+        daysRemainingClass = 'urgent';
+    } else {
+        daysText = `あと${daysUntilDue}日`;
+    }
+    
+    const mixedInfo = vaccine.type === 'mixed' ? `${vaccine.mixedCount}種混合` : '';
+    
+    return `
+        <div class="vaccine-item ${vaccine.type}" data-id="${docId}">
+            <div class="vaccine-header">
+                <div>
+                    <div class="vaccine-type-badge ${vaccine.type}">
+                        <span>${vaccineInfo.icon}</span>
+                        <span>${vaccineInfo.name} ${mixedInfo}</span>
+                    </div>
+                </div>
+                <div class="vaccine-date">
+                    ${vaccineDate.toLocaleDateString('ja-JP')}
+                </div>
+            </div>
+            
+            <div class="vaccine-details">
+                ${vaccine.clinicName ? `
+                    <div class="detail-item">
+                        <div class="detail-label">動物病院</div>
+                        <div class="detail-value">${vaccine.clinicName}</div>
+                    </div>
+                ` : ''}
+                
+                ${vaccine.memo ? `
+                    <div class="detail-item">
+                        <div class="detail-label">メモ</div>
+                        <div class="detail-value">${vaccine.memo}</div>
+                    </div>
+                ` : ''}
+            </div>
+            
+            <div class="next-due">
+                <div class="next-due-text">次回予定日:</div>
+                <div>
+                    <div class="next-due-date">${nextDueDate.toLocaleDateString('ja-JP')}</div>
+                    <div class="days-remaining ${daysRemainingClass}">${daysText}</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ワクチン通知チェック
+async function checkVaccineNotifications() {
+    if (!currentUser) return;
+    
+    try {
+        const today = new Date();
+        const oneMonthFromNow = new Date();
+        oneMonthFromNow.setDate(today.getDate() + 30);
+        
+        const snapshot = await db.collection('vaccines')
+            .where('userId', '==', currentUser.uid)
+            .where('nextDue', '<=', oneMonthFromNow.toISOString().split('T')[0])
+            .where('nextDue', '>=', today.toISOString().split('T')[0])
+            .get();
+        
+        const notificationArea = document.getElementById('vaccine-notifications');
+        if (!notificationArea) return;
+        
+        if (snapshot.empty) {
+            notificationArea.innerHTML = '';
+            return;
+        }
+        
+        let html = '';
+        snapshot.forEach(doc => {
+            const vaccine = doc.data();
+            html += createNotificationHTML(vaccine);
+        });
+        
+        notificationArea.innerHTML = html;
+        
+        // 通知バッジ更新
+        updateNotificationBadge(snapshot.size);
+        
+    } catch (error) {
+        console.error('❌ ワクチン通知チェックエラー:', error);
+    }
+}
+
+// 通知バッジ更新
+function updateNotificationBadge(count) {
+    const badge = document.getElementById('notification-badge');
+    if (!badge) return;
+    
+    if (count > 0) {
+        badge.textContent = count;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+// 通知HTML生成
+function createNotificationHTML(vaccine) {
+    const vaccineInfo = VACCINE_TYPES[vaccine.type];
+    const nextDueDate = new Date(vaccine.nextDue);
+    const today = new Date();
+    const daysUntilDue = Math.ceil((nextDueDate - today) / (1000 * 60 * 60 * 24));
+    
+    let urgencyMessage = '';
+    if (daysUntilDue <= 7) {
+        urgencyMessage = '緊急！';
+    } else if (daysUntilDue <= 14) {
+        urgencyMessage = 'お早めに！';
+    }
+    
+    const mixedInfo = vaccine.type === 'mixed' ? `${vaccine.mixedCount}種混合` : '';
+    
+    return `
+        <div class="notification-card">
+            <div class="notification-header">
+                <i class="fas fa-bell"></i>
+                <span class="notification-title">${urgencyMessage} ワクチン接種予定</span>
+            </div>
+            <div class="notification-message">
+                ${vaccineInfo.name} ${mixedInfo} の接種予定日が近づいています。<br>
+                予定日: ${nextDueDate.toLocaleDateString('ja-JP')} (あと${daysUntilDue}日)
+            </div>
+            <div class="notification-meta">
+                <span>前回接種: ${new Date(vaccine.date).toLocaleDateString('ja-JP')}</span>
+                <span>${vaccineInfo.icon}</span>
+            </div>
+        </div>
+    `;
+}
+
+// ワクチンデータ管理
+const VACCINE_TYPES = {
+    rabies: {
+        name: '狂犬病ワクチン',
+        interval: 365, // 1年
+        icon: '💕',
+        color: '#e74c3c'
+    },
+    mixed: {
+        name: '混合ワクチン',
+        interval: 365, // 1年
+        icon: '💉',
+        color: '#3498db'
+    }
+};
 
 // アプリ初期化
 function initializeApp() {
@@ -575,6 +1042,9 @@ function initializeApp() {
             
             await initializeNewUser();
             await loadUserProfile();
+            
+            // ワクチン通知チェック
+            await checkVaccineNotifications();
             
             showMainScreen('dashboard');
         } else {

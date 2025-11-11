@@ -72,6 +72,10 @@
                     </div>
                 </div>
                 <div class="header-right">
+                    <button id="notifications-btn" class="icon-btn notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span id="notification-badge" class="notification-badge hidden">0</span>
+                    </button>
                     <button id="profile-btn" class="icon-btn">
                         <i class="fas fa-user-circle"></i>
                     </button>
@@ -92,9 +96,13 @@
                             <div class="greeting-section">
                                 <h1 id="welcome-message" class="hero-greeting">こんにちは！</h1>
                                 <p id="dog-info" class="dog-info-hero">プロフィールを設定してください</p>
+                                <button id="setup-profile-btn" class="setup-btn">設定はこちら</button>
                             </div>
                             <div class="dog-avatar-hero">
-                                <div id="dog-breed-icon" class="breed-icon-hero">🐕</div>
+                                <div id="dog-breed-icon" class="breed-icon-hero">
+                                    <img id="profile-avatar" src="" alt="" class="profile-image hidden">
+                                    <div class="emoji-placeholder">🐕</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -118,13 +126,13 @@
                         </div>
                     </div>
                     
-                    <div class="feature-card secondary" data-action="vaccine-record">
+                    <div class="feature-card premium" data-action="food-ranking">
                         <div class="feature-icon-wrapper">
-                            <i class="fas fa-syringe"></i>
+                            <i class="fas fa-star"></i>
                         </div>
                         <div class="feature-info">
-                            <h3>ワクチン記録</h3>
-                            <p>接種履歴管理・次回予定日の通知</p>
+                            <h3>フードランキング</h3>
+                            <p>厳選ドッグフード・専門家おすすめ商品</p>
                         </div>
                         <div class="feature-arrow">
                             <i class="fas fa-chevron-right"></i>
@@ -144,13 +152,13 @@
                         </div>
                     </div>
                     
-                    <div class="feature-card premium" data-action="food-ranking">
+                    <div class="feature-card secondary" data-action="vaccine-record">
                         <div class="feature-icon-wrapper">
-                            <i class="fas fa-star"></i>
+                            <i class="fas fa-syringe"></i>
                         </div>
                         <div class="feature-info">
-                            <h3>フードランキング</h3>
-                            <p>厳選ドッグフード・専門家おすすめ商品</p>
+                            <h3>ワクチン記録</h3>
+                            <p>接種履歴管理・次回予定日の通知</p>
                         </div>
                         <div class="feature-arrow">
                             <i class="fas fa-chevron-right"></i>
@@ -159,16 +167,6 @@
                 </div>
             </div>
 
-            <!-- 今日のケアチェック -->
-            <div class="care-checklist">
-                <div class="section-header">
-                    <h3><i class="fas fa-check-circle"></i> 今日のケアチェック</h3>
-                    <p class="section-subtitle">愛犬の健康管理をサポート</p>
-                </div>
-                <div id="today-tasks-list" class="care-tasks">
-                    <!-- 動的に追加 -->
-                </div>
-            </div>
         </div>
 
         <!-- 餌量計算画面 -->
@@ -242,8 +240,79 @@
                 </button>
             </div>
             <div class="vaccine-content">
+                <!-- 通知エリア -->
+                <div id="vaccine-notifications" class="notification-area">
+                    <!-- 動的に追加 -->
+                </div>
+                
+                <!-- ワクチンタブ -->
+                <div class="vaccine-tabs">
+                    <button class="vaccine-tab active" data-type="all">全て</button>
+                    <button class="vaccine-tab" data-type="rabies">狂犬病</button>
+                    <button class="vaccine-tab" data-type="mixed">混合ワクチン</button>
+                </div>
+                
+                <!-- ワクチンリスト -->
                 <div id="vaccine-list" class="vaccine-list">
                     <!-- 動的に追加 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- ワクチン登録モーダル -->
+        <div id="vaccine-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="vaccine-modal-title">ワクチン接種記録</h3>
+                    <button id="vaccine-modal-close" class="close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="vaccine-form">
+                        <div class="form-group">
+                            <label>ワクチン種類</label>
+                            <select id="vaccine-type" required>
+                                <option value="">選択してください</option>
+                                <option value="rabies">狂犬病ワクチン</option>
+                                <option value="mixed">混合ワクチン</option>
+                            </select>
+                        </div>
+                        
+                        <div id="mixed-vaccine-options" class="form-group hidden">
+                            <label>混合ワクチン種類</label>
+                            <select id="mixed-vaccine-count">
+                                <option value="">選択してください</option>
+                                <option value="5">5種混合</option>
+                                <option value="6">6種混合</option>
+                                <option value="8">8種混合</option>
+                                <option value="9">9種混合</option>
+                                <option value="10">10種混合</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>接種日</label>
+                            <input type="date" id="vaccine-date" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>動物病院名（任意）</label>
+                            <input type="text" id="clinic-name" placeholder="○○動物病院">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>メモ（任意）</label>
+                            <textarea id="vaccine-memo" placeholder="副作用や気になったことなど" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="modal-actions">
+                            <button type="button" id="cancel-vaccine" class="secondary-btn">キャンセル</button>
+                            <button type="submit" class="primary-btn">
+                                <i class="fas fa-save"></i> 保存
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -506,6 +575,20 @@
             </div>
             <div class="profile-content">
                 <div class="profile-form">
+                    <div class="form-group">
+                        <label>プロフィール画像</label>
+                        <div class="image-upload-section">
+                            <input type="file" id="profile-image-input" accept="image/*" class="hidden">
+                            <div class="image-preview" id="image-preview">
+                                <div class="upload-placeholder">
+                                    <i class="fas fa-camera"></i>
+                                    <span>クリックして画像を選択</span>
+                                </div>
+                                <img id="preview-img" class="preview-image hidden" alt="プレビュー">
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <label>愛犬の名前</label>
                         <input type="text" id="dog-name" placeholder="ポチ">

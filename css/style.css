@@ -309,6 +309,105 @@ body {
   font-size: 2rem;
 }
 
+/* プロフィール設定ボタン */
+.setup-btn {
+  background: var(--gradient-primary);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: var(--space-sm) var(--space-lg);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  margin-top: var(--space-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.setup-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* プロフィール画像とアバター */
+.breed-icon-hero {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-image {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  box-shadow: var(--shadow-md);
+}
+
+.emoji-placeholder {
+  font-size: 2.5rem;
+}
+
+.profile-image.hidden {
+  display: none;
+}
+
+/* プロフィール画像アップロード */
+.image-upload-section {
+  margin-bottom: var(--space-lg);
+}
+
+.image-preview {
+  width: 120px;
+  height: 120px;
+  border: 2px dashed var(--gray-300);
+  border-radius: var(--radius-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.image-preview:hover {
+  border-color: var(--primary-color);
+  background: rgba(255, 107, 107, 0.05);
+}
+
+.upload-placeholder {
+  text-align: center;
+  color: var(--gray-600);
+}
+
+.upload-placeholder i {
+  font-size: 2rem;
+  margin-bottom: var(--space-sm);
+  display: block;
+  color: var(--gray-400);
+}
+
+.upload-placeholder span {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}
+
+.preview-image.hidden {
+  display: none;
+}
+
 .quick-actions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -399,6 +498,19 @@ body {
 
 .today-tasks h3 i {
   color: var(--primary-color);
+}
+
+/* ヒーロー部分のプロフィール設定UI */
+.dashboard-hero .setup-btn {
+  display: inline-block;
+}
+
+.dashboard-hero.profile-complete .setup-btn {
+  display: none;
+}
+
+.dashboard-hero.profile-complete .dog-info-hero {
+  margin-bottom: 0;
 }
 
 .screen-header {
@@ -710,6 +822,312 @@ body {
 
 .modal-body {
   padding: var(--space-lg);
+}
+
+/* ケアチェックリスト削除により、関連スタイルを削除 */
+.care-checklist {
+  display: none;
+}
+
+/* ワクチン記録関連スタイル */
+.vaccine-tabs {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  overflow-x: auto;
+  padding-bottom: var(--space-sm);
+}
+
+.vaccine-tab {
+  background: var(--white);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-full);
+  padding: var(--space-sm) var(--space-lg);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: var(--transition-normal);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vaccine-tab.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--white);
+  box-shadow: var(--shadow-md);
+}
+
+.vaccine-tab:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.vaccine-tab.active:hover {
+  color: var(--white);
+}
+
+/* 通知エリア */
+.notification-area {
+  margin-bottom: var(--space-xl);
+}
+
+.notification-card {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 1px solid #ffc107;
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.notification-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 4px;
+  background: #ff6b35;
+}
+
+.notification-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.notification-header i {
+  color: #ff6b35;
+  font-size: 1.2rem;
+}
+
+.notification-title {
+  font-weight: 600;
+  color: var(--gray-800);
+  font-size: 1rem;
+}
+
+.notification-message {
+  color: var(--gray-700);
+  line-height: 1.5;
+  margin-bottom: var(--space-sm);
+}
+
+.notification-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--gray-600);
+}
+
+/* ワクチンリスト */
+.vaccine-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.vaccine-item {
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  transition: var(--transition-normal);
+  position: relative;
+}
+
+.vaccine-item:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.vaccine-item.rabies {
+  border-left: 4px solid #e74c3c;
+}
+
+.vaccine-item.mixed {
+  border-left: 4px solid #3498db;
+}
+
+.vaccine-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-md);
+}
+
+.vaccine-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: white;
+}
+
+.vaccine-type-badge.rabies {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.vaccine-type-badge.mixed {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+}
+
+.vaccine-date {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.vaccine-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-label {
+  font-size: 0.8rem;
+  color: var(--gray-600);
+  font-weight: 500;
+}
+
+.detail-value {
+  color: var(--gray-800);
+  font-weight: 500;
+}
+
+.next-due {
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.next-due-text {
+  color: var(--gray-700);
+  font-size: 0.9rem;
+}
+
+.next-due-date {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.days-remaining {
+  font-size: 0.8rem;
+  color: var(--gray-600);
+}
+
+.days-remaining.urgent {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+/* モーダルアクション */
+.modal-actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.secondary-btn {
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  flex: 1;
+}
+
+.secondary-btn:hover {
+  background: var(--gray-200);
+}
+
+textarea {
+  width: 100%;
+  padding: var(--space-md);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 80px;
+  transition: var(--transition-normal);
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+}
+
+/* 空の状態 */
+.empty-state {
+  text-align: center;
+  padding: var(--space-2xl);
+  color: var(--gray-600);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-lg);
+}
+
+.empty-state h3 {
+  font-size: 1.25rem;
+  color: var(--gray-700);
+  margin-bottom: var(--space-sm);
+}
+
+.empty-state p {
+  color: var(--gray-600);
+  line-height: 1.5;
+}
+
+/* 通知バッジ */
+.notification-btn {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #e74c3c;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-full);
+  min-width: 18px;
+  text-align: center;
+  line-height: 1;
+  transform: translate(25%, -25%);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.notification-badge.hidden {
+  display: none;
 }
 
 /* Responsive */
