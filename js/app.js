@@ -394,39 +394,87 @@ function populateDogBreedOptions() {
 }
 
 // フードランキング
-function loadFoodRanking(category = 'premium') {
-    const rankingList = document.getElementById('food-ranking-list');
-    const foods = DOG_FOOD_RANKING[category] || [];
+function loadFoodRanking() {
+    console.log('🍖 フードランキング読み込み開始');
     
-    rankingList.innerHTML = '';
-    foods.forEach((food, index) => {
-        const foodCard = createFoodCard(food, index + 1);
-        rankingList.appendChild(foodCard);
-    });
+    // アフィリエイトボタンのイベントリスナーを設定
+    setupAffiliateButtons();
 }
 
-function createFoodCard(food, rank) {
-    const card = document.createElement('div');
-    card.className = 'food-card';
-    card.innerHTML = `
-        <div class="food-rank">${food.image}</div>
-        <div class="food-info">
-            <h4>${food.name}</h4>
-            <div class="food-rating">
-                ${'⭐'.repeat(Math.floor(food.rating))} ${food.rating}
-            </div>
-            <div class="food-price">${food.price}</div>
-            <div class="food-features">
-                ${food.features.map(feature => `<span class="feature-tag">${feature}</span>`).join('')}
-            </div>
-        </div>
-        <div class="food-actions">
-            <button onclick="window.open('${food.affiliate_url}', '_blank')" class="primary-btn">
-                🛒 購入する
-            </button>
-        </div>
-    `;
-    return card;
+// アフィリエイトリンク設定
+const AFFILIATE_LINKS = {
+    'mogwan': 'https://px.a8.net/svt/ejp?a8mat=3NGVLD+2NUUPU+3J8+1BP19U',
+    'umaka': 'https://t.felmat.net/fmcl?ak=O4993P.1.A121367Z.J102441Q',
+    'canagan': 'https://px.a8.net/svt/ejp?a8mat=3NGVLD+2TT6RM+3J8+HWPVL',
+    'essential': 'https://px.a8.net/svt/ejp?a8mat=45GGT8+BDMAIQ+3J8+3H2YHD',
+    'konokonogohan-large': 'https://konokototomoni.com/shop/products/this_is_gohan_large',
+    'mishone': 'https://px.a8.net/svt/ejp?a8mat=45GGT8+C1FMPU+4PA6+BWVTE',
+    'cocogourmet': 'https://coco-gourmet.com/shopping/lp.php?p=cp_coco_1&adid=coco_a8',
+    'obremo': 'https://obremo.jp/',
+    'pelthia': 'https://pelthia.jp/',
+    'naturol': 'https://reason-why.jp/naturol/ad1/'
+};
+
+function setupAffiliateButtons() {
+    console.log('🔗 アフィリエイトボタン設定開始');
+    
+    // 全てのアフィリエイトボタンにイベントリスナーを追加
+    const affiliateButtons = document.querySelectorAll('.affiliate-btn');
+    
+    affiliateButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const productId = this.getAttribute('data-product');
+            const affiliateUrl = AFFILIATE_LINKS[productId];
+            
+            if (affiliateUrl) {
+                // Firestore Analytics (アフィリエイトクリック記録)
+                if (analytics) {
+                    analytics.logEvent('affiliate_click', {
+                        product_id: productId,
+                        product_name: this.closest('.ranking-item, .ranking-item-compact')?.querySelector('.product-name, h5')?.textContent || 'Unknown',
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                
+                // コンバージョン追跡
+                trackAffiliateClick(productId);
+                
+                console.log(`🛒 アフィリエイトリンククリック: ${productId}`);
+                
+                // 新しいタブでアフィリエイトリンクを開く
+                window.open(affiliateUrl, '_blank', 'noopener,noreferrer');
+            } else {
+                console.error(`❌ アフィリエイトリンクが見つかりません: ${productId}`);
+                alert('申し訳ございません。リンクの準備中です。');
+            }
+        });
+    });
+    
+    console.log(`✅ ${affiliateButtons.length}個のアフィリエイトボタンを設定しました`);
+}
+
+// アフィリエイトクリック追跡
+async function trackAffiliateClick(productId) {
+    try {
+        if (!currentUser) return;
+        
+        const clickData = {
+            userId: currentUser.uid,
+            productId: productId,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            userAgent: navigator.userAgent,
+            referrer: document.referrer
+        };
+        
+        // Firestore にクリックデータを保存
+        await db.collection('affiliate_clicks').add(clickData);
+        
+        console.log('📊 アフィリエイトクリック記録完了:', productId);
+    } catch (error) {
+        console.error('❌ アフィリエイトクリック記録エラー:', error);
+    }
 }
 
 // イベントリスナー設定

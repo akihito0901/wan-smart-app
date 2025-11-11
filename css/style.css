@@ -761,6 +761,323 @@ body {
   }
 }
 
+/* フードランキング専用スタイル */
+#food-ranking {
+  background: linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.ranking-hero {
+  text-align: center;
+  padding: var(--space-xl) var(--space-lg);
+  background: var(--gradient-primary);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-xl);
+  color: white;
+}
+
+.ranking-hero h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: var(--space-sm);
+}
+
+.ranking-subtitle {
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* メインランキングアイテム（1-5位） */
+.ranking-item {
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  gap: var(--space-lg);
+  transition: var(--transition-normal);
+  border-left: 4px solid;
+}
+
+.ranking-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+}
+
+.ranking-item.rank-1 {
+  border-left-color: #FFD700;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 255, 255, 1) 50%);
+}
+
+.ranking-item.rank-2 {
+  border-left-color: #C0C0C0;
+}
+
+.ranking-item.rank-3 {
+  border-left-color: #CD7F32;
+}
+
+.ranking-item.rank-4,
+.ranking-item.rank-5 {
+  border-left-color: var(--accent-color);
+}
+
+.rank-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  text-align: center;
+}
+
+.rank-number {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--gray-800);
+}
+
+.rank-label {
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  margin-top: -0.25rem;
+}
+
+.product-image {
+  position: relative;
+  min-width: 140px;
+  max-width: 140px;
+  height: 140px;
+}
+
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.price-tag {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+}
+
+.product-info {
+  flex: 1;
+}
+
+.product-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: var(--space-sm);
+}
+
+.product-rating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.rating-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+}
+
+.rating-badge.s-rank {
+  background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+}
+
+.rating-badge.a-rank {
+  background: linear-gradient(135deg, #4ECDC4 0%, #6FE3DB 100%);
+}
+
+.stars {
+  color: #FFD700;
+  font-size: 0.875rem;
+}
+
+.product-description {
+  color: var(--gray-600);
+  line-height: 1.6;
+  margin-bottom: var(--space-md);
+}
+
+.product-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: var(--space-md);
+}
+
+.feature-tag {
+  background: rgba(69, 183, 209, 0.1);
+  color: var(--accent-color);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.product-actions {
+  display: flex;
+  align-items: center;
+}
+
+/* アフィリエイトボタン */
+.affiliate-btn {
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition-normal);
+  cursor: pointer;
+  min-width: 180px;
+  justify-content: center;
+  font-size: 0.875rem;
+}
+
+.affiliate-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  filter: brightness(1.1);
+}
+
+.affiliate-btn:active {
+  transform: translateY(0);
+}
+
+/* コンパクトランキングアイテム（6-10位） */
+.ranking-item-compact {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  transition: var(--transition-normal);
+}
+
+.ranking-item-compact:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.compact-rank {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-700);
+  min-width: 40px;
+  text-align: center;
+}
+
+.compact-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.compact-info h5 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--gray-800);
+  flex: 1;
+}
+
+.affiliate-btn.compact {
+  min-width: 120px;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+  .ranking-item {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-md);
+  }
+  
+  .rank-badge {
+    min-width: auto;
+  }
+  
+  .product-image {
+    align-self: center;
+  }
+  
+  .product-features {
+    justify-content: center;
+  }
+  
+  .affiliate-btn {
+    min-width: 100%;
+  }
+  
+  .compact-info {
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+  
+  .affiliate-btn.compact {
+    min-width: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ranking-hero {
+    padding: var(--space-lg) var(--space-md);
+  }
+  
+  .ranking-hero h3 {
+    font-size: 1.25rem;
+  }
+  
+  .ranking-item {
+    padding: var(--space-md);
+  }
+  
+  .product-name {
+    font-size: 1.125rem;
+  }
+  
+  .compact-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
+  }
+  
+  .affiliate-btn.compact {
+    align-self: stretch;
+  }
+}
+
 /* Animations */
 .screen {
   opacity: 0;
@@ -769,4 +1086,35 @@ body {
 
 @keyframes fadeIn {
   to { opacity: 1; }
+}
+
+.ranking-item {
+  animation: slideUp 0.6s ease forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.ranking-item:nth-child(1) { animation-delay: 0.1s; }
+.ranking-item:nth-child(2) { animation-delay: 0.2s; }
+.ranking-item:nth-child(3) { animation-delay: 0.3s; }
+.ranking-item:nth-child(4) { animation-delay: 0.4s; }
+.ranking-item:nth-child(5) { animation-delay: 0.5s; }
+
+.ranking-item-compact {
+  animation: slideUp 0.4s ease forwards;
+  opacity: 0;
+  transform: translateY(15px);
+}
+
+.ranking-item-compact:nth-child(6) { animation-delay: 0.6s; }
+.ranking-item-compact:nth-child(7) { animation-delay: 0.7s; }
+.ranking-item-compact:nth-child(8) { animation-delay: 0.8s; }
+.ranking-item-compact:nth-child(9) { animation-delay: 0.9s; }
+.ranking-item-compact:nth-child(10) { animation-delay: 1.0s; }
+
+@keyframes slideUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
