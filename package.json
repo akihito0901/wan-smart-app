@@ -1,8 +1,0 @@
-{
-  "name": "wansmart",
-  "version": "1.0.0",
-  "description": "Dog Life - 愛犬のいろいろ、これ1台",
-  "scripts": {
-    "build": "echo 'Static site - no build needed'"
-  }
-}

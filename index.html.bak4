@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DogLife - 愛犬のいろいろ、これ1台。</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard-redesign.css">
+    <link rel="stylesheet" href="css/ultra-modern-dashboard.css">
+    <!-- Firebase v9 SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- ログイン画面 -->
+    <div id="login-screen" class="screen">
+        <div class="login-container">
+            <div class="hero-section">
+                <div class="hero-content">
+                    <div class="app-logo-main">
+                        <img src="images/wansmart-logo.png" alt="WANSMART" class="main-logo">
+                    </div>
+                    <h1 class="hero-title">愛犬のいろいろ、<br>これ1台。</h1>
+                    <p class="hero-subtitle">餌量計算・ワクチン管理・イベント情報<br>愛犬の健康と幸せを総合サポート</p>
+                </div>
+                <div class="hero-image">
+                    <img src="images/dog-hero.png" alt="Dog illustration" class="dog-illustration">
+                </div>
+            </div>
+            
+            <div class="features-preview">
+                <div class="feature-item">
+                    <i class="fas fa-calculator"></i>
+                    <span>餌量計算</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-syringe"></i>
+                    <span>ワクチン管理</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>イベント情報</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-star"></i>
+                    <span>フードランキング</span>
+                </div>
+            </div>
+            
+            <div class="login-actions">
+                <button id="google-login-btn" class="google-login-btn">
+                    <i class="fab fa-google"></i>
+                    <span>Googleで始める</span>
+                </button>
+                <p class="login-note">無料で利用できます</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- メインアプリ画面 -->
+    <div id="main-app" class="screen hidden">
+        <!-- ヘッダー -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="app-logo-small">
+                        <img src="images/wansmart-logo.png" alt="WANSMART" class="header-logo">
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button id="notifications-btn" class="icon-btn notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span id="notification-badge" class="notification-badge hidden">0</span>
+                    </button>
+                    <button id="profile-btn" class="icon-btn">
+                        <i class="fas fa-user-circle"></i>
+                    </button>
+                    <button id="logout-btn" class="icon-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ダッシュボード -->
+        <div id="dashboard" class="main-content">
+            <!-- ヒーローセクション -->
+            <div class="dashboard-hero">
+                <div class="hero-background">
+                    <div class="hero-overlay">
+                        <div class="welcome-content">
+                            <div class="greeting-section">
+                                <h1 id="welcome-message" class="hero-greeting">こんにちは！</h1>
+                                <p id="dog-info" class="dog-info-hero">プロフィールを設定してください</p>
+                                <button id="setup-profile-btn" class="setup-btn">設定はこちら</button>
+                            </div>
+                            <div class="dog-avatar-hero">
+                                <div id="dog-breed-icon" class="breed-icon-hero">
+                                    <img id="profile-avatar" src="" alt="" class="profile-image hidden">
+                                    <div class="emoji-placeholder">🐕</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- メイン機能ナビゲーション -->
+            <div class="features-navigation">
+                <h2 class="section-title">愛犬のケアメニュー</h2>
+                <div class="feature-grid">
+                    <div class="feature-card primary" data-action="food-calculator">
+                        <div class="feature-icon-wrapper">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h3>餌量計算</h3>
+                            <p>体重・年齢に合わせた最適な餌量を自動計算</p>
+                        </div>
+                        <div class="feature-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card premium" data-action="food-ranking">
+                        <div class="feature-icon-wrapper">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h3>フードランキング</h3>
+                            <p>厳選ドッグフード・専門家おすすめ商品</p>
+                        </div>
+                        <div class="feature-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card accent" data-action="events">
+                        <div class="feature-icon-wrapper">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h3>イベント情報</h3>
+                            <p>全国の犬関連イベント・ドッグラン情報</p>
+                        </div>
+                        <div class="feature-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card secondary" data-action="vaccine-record">
+                        <div class="feature-icon-wrapper">
+                            <i class="fas fa-syringe"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h3>ワクチン記録</h3>
+                            <p>接種履歴管理・次回予定日の通知</p>
+                        </div>
+                        <div class="feature-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 餌量計算画面 -->
+        <div id="food-calculator" class="screen hidden">
+            <div class="screen-header">
+                <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+                <h2>餌量計算</h2>
+            </div>
+            <div class="calculator-content">
+                <div class="input-section">
+                    <div class="input-group">
+                        <label>現在の体重</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="dog-weight" placeholder="5.0" step="0.1">
+                            <span class="unit">kg</span>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>年齢</label>
+                        <select id="dog-age-category">
+                            <option value="puppy">子犬（2-12ヶ月）</option>
+                            <option value="adult">成犬（1-7歳）</option>
+                            <option value="senior">シニア犬（7歳以上）</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>活動レベル</label>
+                        <select id="activity-level">
+                            <option value="low">低い（室内中心）</option>
+                            <option value="moderate">普通（散歩1-2回/日）</option>
+                            <option value="high">高い（運動量多い）</option>
+                        </select>
+                    </div>
+                    
+                    <button id="calculate-food" class="primary-btn">
+                        <i class="fas fa-calculator"></i> 計算する
+                    </button>
+                </div>
+                
+                <div id="food-result" class="result-section hidden">
+                    <div class="result-card">
+                        <h3>推奨餌量</h3>
+                        <div class="result-value">
+                            <span id="daily-amount" class="amount">150</span>
+                            <span class="unit">g/日</span>
+                        </div>
+                        <div class="result-breakdown">
+                            <div class="meal-info">
+                                <span>朝食: <strong id="morning-amount">75g</strong></span>
+                                <span>夕食: <strong id="evening-amount">75g</strong></span>
+                            </div>
+                        </div>
+                        <div class="result-note">
+                            <i class="fas fa-info-circle"></i>
+                            <p>この量は目安です。愛犬の体調を見ながら調整してください。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ワクチン記録画面 -->
+        <div id="vaccine-record" class="screen hidden">
+            <div class="screen-header">
+                <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+                <h2>ワクチン記録</h2>
+                <button id="add-vaccine" class="icon-btn">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="vaccine-content">
+                <!-- 通知エリア -->
+                <div id="vaccine-notifications" class="notification-area">
+                    <!-- 動的に追加 -->
+                </div>
+                
+                <!-- ワクチンタブ -->
+                <div class="vaccine-tabs">
+                    <button class="vaccine-tab active" data-type="all">全て</button>
+                    <button class="vaccine-tab" data-type="rabies">狂犬病</button>
+                    <button class="vaccine-tab" data-type="mixed">混合ワクチン</button>
+                </div>
+                
+                <!-- ワクチンリスト -->
+                <div id="vaccine-list" class="vaccine-list">
+                    <!-- 動的に追加 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- ワクチン登録モーダル -->
+        <div id="vaccine-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="vaccine-modal-title">ワクチン接種記録</h3>
+                    <button id="vaccine-modal-close" class="close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="vaccine-form">
+                        <div class="form-group">
+                            <label>ワクチン種類</label>
+                            <select id="vaccine-type" required>
+                                <option value="">選択してください</option>
+                                <option value="rabies">狂犬病ワクチン</option>
+                                <option value="mixed">混合ワクチン</option>
+                            </select>
+                        </div>
+                        
+                        <div id="mixed-vaccine-options" class="form-group hidden">
+                            <label>混合ワクチン種類</label>
+                            <select id="mixed-vaccine-count">
+                                <option value="">選択してください</option>
+                                <option value="5">5種混合</option>
+                                <option value="6">6種混合</option>
+                                <option value="8">8種混合</option>
+                                <option value="9">9種混合</option>
+                                <option value="10">10種混合</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>接種日</label>
+                            <input type="date" id="vaccine-date" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>動物病院名（任意）</label>
+                            <input type="text" id="clinic-name" placeholder="○○動物病院">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>メモ（任意）</label>
+                            <textarea id="vaccine-memo" placeholder="副作用や気になったことなど" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="modal-actions">
+                            <button type="button" id="cancel-vaccine" class="secondary-btn">キャンセル</button>
+                            <button type="submit" class="primary-btn">
+                                <i class="fas fa-save"></i> 保存
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- イベント情報画面 -->
+        <div id="events" class="screen hidden">
+            <div class="screen-header">
+                <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+                <h2>イベント情報</h2>
+                <button id="filter-events" class="icon-btn">
+                    <i class="fas fa-filter"></i>
+                </button>
+            </div>
+            <div class="events-content">
+                <div class="events-filter">
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="all">すべて</button>
+                        <button class="filter-tab" data-filter="show">ドッグショー</button>
+                        <button class="filter-tab" data-filter="training">しつけ教室</button>
+                        <button class="filter-tab" data-filter="meet">オフ会</button>
+                    </div>
+                </div>
+                <div id="events-list" class="events-list">
+                    <!-- 動的に追加 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- フードランキング画面 -->
+        <div id="food-ranking" class="screen hidden">
+            <div class="screen-header">
+                <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+                <h2>フードランキング</h2>
+            </div>
+            <div class="ranking-content">
+                <div class="ranking-hero">
+                    <h3>2025年版 人気ドッグフードおすすめランキングTOP10</h3>
+                    <p class="ranking-subtitle">全年齢の愛犬に安心して与えられる人気ドッグフードを多角的に評価</p>
+                </div>
+                <div id="food-ranking-list" class="ranking-list">
+                    <!-- ランキング1位 -->
+                    <div class="ranking-item rank-1">
+                        <div class="rank-badge">
+                            <span class="rank-number">1</span>
+                            <span class="rank-label">位</span>
+                        </div>
+                        <div class="product-image">
+                            <img src="images/mogwan.jpg" alt="モグワン ドッグフード" class="product-img">
+                            <div class="price-tag">1日約251円</div>
+                        </div>
+                        <div class="product-info">
+                            <h4 class="product-name">モグワン</h4>
+                            <div class="product-rating">
+                                <span class="rating-badge s-rank">Sランク</span>
+                                <div class="stars">★★★★★</div>
+                            </div>
+                            <p class="product-description">
+                                イギリス産プレミアムフード。放し飼いチキンと生サーモン50%以上使用。ヒューマングレード&無添加で1日約251円とコスパ優秀。
+                            </p>
+                            <div class="product-features">
+                                <span class="feature-tag">グレインフリー</span>
+                                <span class="feature-tag">高タンパク</span>
+                                <span class="feature-tag">無添加</span>
+                            </div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="affiliate-btn primary" data-product="mogwan">
+                                <i class="fas fa-external-link-alt"></i>
+                                公式サイトで詳細を見る
+                            </button>
+                            
+                            <!-- START MoshimoAffiliateEasyLink -->
+                            <div class="moshimo-affiliate-section">
+                                <p class="shopping-label">🛒 通販サイトで探す</p>
+                                <script type="text/javascript">(function(b,c,f,g,a,d,e){b.MoshimoAffiliateObject=a;b[a]=b[a]||function(){arguments.currentScript=c.currentScript||c.scripts[c.scripts.length-2];(b[a].q=b[a].q||[]).push(arguments)};c.getElementById(a)||(d=c.createElement(f),d.src=g,d.id=a,e=c.getElementsByTagName("body")[0],e.appendChild(d))})(window,document,"script","//dn.msmstatic.com/site/cardlink/bundle.js?20220329","msmaflink");msmaflink({"n":"モグワンドッグフード チキン&サーモン (1.8kg) グレインフリー　香料・着色料不使用 全犬種・全年齢対応","b":"","t":"","d":"https://thumbnail.image.rakuten.co.jp","c_p":"/@0_mall/shop-f-osaka/cabinet","p":["/compass1753662359.jpg","/compass1717654911.jpg"],"u":{"u":"https://item.rakuten.co.jp/shop-f-osaka/10000628/","t":"rakuten","r_v":""},"v":"2.1","b_l":[{"id":1,"u_tx":"楽天市場で見る","u_bc":"#f76956","u_url":"https://item.rakuten.co.jp/shop-f-osaka/10000628/","a_id":3934554,"p_id":54,"pl_id":27059,"pc_id":54,"s_n":"rakuten","u_so":1},{"id":2,"u_tx":"Amazonで見る","u_bc":"#f79256","u_url":"https://www.amazon.co.jp/s/ref=nb_sb_noss_1?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Daps&field-keywords=%E3%83%A2%E3%82%B0%E3%83%AF%E3%83%B3%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%89%20%E3%83%81%E3%82%AD%E3%83%B3%26%E3%82%B5%E3%83%BC%E3%83%A2%E3%83%B3%20(1.8kg)%20%E3%82%B0%E3%83%AC%E3%82%A4%E3%83%B3%E3%83%95%E3%83%AA%E3%83%BC%E3%80%80%E9%A6%99%E6%96%99%E3%83%BB%E7%9D%80%E8%89%B2%E6%96%99%E4%B8%8D%E4%BD%BF%E7%94%A8%20%E5%85%A8%E7%8A%AC%E7%A8%AE%E3%83%BB%E5%85%A8%E5%B9%B4%E9%BD%A2%E5%AF%BE%E5%BF%9C","a_id":3819568,"p_id":170,"pl_id":27060,"pc_id":185,"s_n":"amazon","u_so":2},{"id":3,"u_tx":"Yahoo!ショッピングで見る","u_bc":"#66a7ff","u_url":"https://shopping.yahoo.co.jp/search?first=1&p=%E3%83%A2%E3%82%B0%E3%83%AF%E3%83%B3%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%89%20%E3%83%81%E3%82%AD%E3%83%B3%26%E3%82%B5%E3%83%BC%E3%83%A2%E3%83%B3%20(1.8kg)%20%E3%82%B0%E3%83%AC%E3%82%A4%E3%83%B3%E3%83%95%E3%83%AA%E3%83%BC%E3%80%80%E9%A6%99%E6%96%99%E3%83%BB%E7%9D%80%E8%89%B2%E6%96%99%E4%B8%8D%E4%BD%BF%E7%94%A8%20%E5%85%A8%E7%8A%AC%E7%A8%AE%E3%83%BB%E5%85%A8%E5%B9%B4%E9%BD%A2%E5%AF%BE%E5%BF%9C","a_id":3934556,"p_id":1225,"pl_id":27061,"pc_id":1925,"s_n":"yahoo","u_so":3}],"eid":"6QyYI","s":"s"});</script><div id="msmaflink-6QyYI">リンク</div>
+                            </div>
+                            <!-- MoshimoAffiliateEasyLink END -->
+                        </div>
+                    </div>
+
+                    <!-- ランキング2位 -->
+                    <div class="ranking-item rank-2">
+                        <div class="rank-badge">
+                            <span class="rank-number">2</span>
+                            <span class="rank-label">位</span>
+                        </div>
+                        <div class="product-image">
+                            <img src="images/umaka.png" alt="うまか UMAKA ドッグフード" class="product-img">
+                            <div class="price-tag">国産無添加</div>
+                        </div>
+                        <div class="product-info">
+                            <h4 class="product-name">うまか (UMAKA)</h4>
+                            <div class="product-rating">
+                                <span class="rating-badge s-rank">Sランク</span>
+                                <div class="stars">★★★★★</div>
+                            </div>
+                            <p class="product-description">
+                                九州産銘柄鶏「華味鳥」100%使用。かつお節だし仕立てで抜群の食いつき。人間が食べても美味しいと評判。
+                            </p>
+                            <div class="product-features">
+                                <span class="feature-tag">高い嗜好性</span>
+                                <span class="feature-tag">国産</span>
+                                <span class="feature-tag">だし風味</span>
+                            </div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="affiliate-btn primary" data-product="umaka">
+                                <i class="fas fa-external-link-alt"></i>
+                                公式サイトで詳細を見る
+                            
+                            <!-- START MoshimoAffiliateEasyLink -->
+                            <div class="moshimo-affiliate-section">
+                                <p class="shopping-label">🛒 通販サイトで探す</p>
+                                <script type="text/javascript">(function(b,c,f,g,a,d,e){b.MoshimoAffiliateObject=a;b[a]=b[a]||function(){arguments.currentScript=c.currentScript||c.scripts[c.scripts.length-2];(b[a].q=b[a].q||[]).push(arguments)};c.getElementById(a)||(d=c.createElement(f),d.src=g,d.id=a,e=c.getElementsByTagName("body")[0],e.appendChild(d))})(window,document,"script","//dn.msmstatic.com/site/cardlink/bundle.js?20220329","msmaflink");msmaflink({"n":"【公式】 ドッグフード うまか 1.5kg 小型犬 国産 チキン 総合栄養食 全犬種 全年齢 保存料・酸化防止剤 無添加 着色料・香料不使用 小粒 ドライ フード シニア パピー 【送料無料】 まとめ買い がお得！","b":"","t":"","d":"https://thumbnail.image.rakuten.co.jp","c_p":"/@0_mall/inuneko-sukoyaka/cabinet/syouhin01","p":["/imgrc0088152201.jpg","/imgrc0088152251.jpg","/imgrc0088152250.jpg"],"u":{"u":"https://item.rakuten.co.jp/inuneko-sukoyaka/001/","t":"rakuten","r_v":""},"v":"2.1","b_l":[{"id":1,"u_tx":"楽天市場で見る","u_bc":"#f76956","u_url":"https://item.rakuten.co.jp/inuneko-sukoyaka/001/","a_id":3934554,"p_id":54,"pl_id":27059,"pc_id":54,"s_n":"rakuten","u_so":1},{"id":2,"u_tx":"Amazonで見る","u_bc":"#f79256","u_url":"https://www.amazon.co.jp/s/ref=nb_sb_noss_1?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Daps&field-keywords=%E3%80%90%E5%85%AC%E5%BC%8F%E3%80%91%20%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%89%20%E3%81%86%E3%81%BE%E3%81%8B%201.5kg%20%E5%B0%8F%E5%9E%8B%E7%8A%AC%20%E5%9B%BD%E7%94%A3%20%E3%83%81%E3%82%AD%E3%83%B3%20%E7%B7%8F%E5%90%88%E6%A0%84%E9%A4%8A%E9%A3%9F%20%E5%85%A8%E7%8A%AC%E7%A8%AE%20%E5%85%A8%E5%B9%B4%E9%BD%A2%20%E4%BF%9D%E5%AD%98%E6%96%99%E3%83%BB%E9%85%B8%E5%8C%96%E9%98%B2%E6%AD%A2%E5%89%A4%20%E7%84%A1%E6%B7%BB%E5%8A%A0%20%E7%9D%80%E8%89%B2%E6%96%99%E3%83%BB%E9%A6%99%E6%96%99%E4%B8%8D%E4%BD%BF%E7%94%A8%20%E5%B0%8F%E7%B2%92%20%E3%83%89%E3%83%A9%E3%82%A4%20%E3%83%95%E3%83%BC%E3%83%89%20%E3%82%B7%E3%83%8B%E3%82%A2%20%E3%83%91%E3%83%94%E3%83%BC%20%E3%80%90%E9%80%81%E6%96%99%E7%84%A1%E6%96%99%E3%80%91%20%E3%81%BE%E3%81%A8%E3%82%81%E8%B2%B7%E3%81%84%20%E3%81%8C%E3%81%8A%E5%BE%97%EF%BC%81","a_id":3819568,"p_id":170,"pl_id":27060,"pc_id":185,"s_n":"amazon","u_so":2},{"id":3,"u_tx":"Yahoo!ショッピングで見る","u_bc":"#66a7ff","u_url":"https://shopping.yahoo.co.jp/search?first=1&p=%E3%80%90%E5%85%AC%E5%BC%8F%E3%80%91%20%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%89%20%E3%81%86%E3%81%BE%E3%81%8B%201.5kg%20%E5%B0%8F%E5%9E%8B%E7%8A%AC%20%E5%9B%BD%E7%94%A3%20%E3%83%81%E3%82%AD%E3%83%B3%20%E7%B7%8F%E5%90%88%E6%A0%84%E9%A4%8A%E9%A3%9F%20%E5%85%A8%E7%8A%AC%E7%A8%AE%20%E5%85%A8%E5%B9%B4%E9%BD%A2%20%E4%BF%9D%E5%AD%98%E6%96%99%E3%83%BB%E9%85%B8%E5%8C%96%E9%98%B2%E6%AD%A2%E5%89%A4%20%E7%84%A1%E6%B7%BB%E5%8A%A0%20%E7%9D%80%E8%89%B2%E6%96%99%E3%83%BB%E9%A6%99%E6%96%99%E4%B8%8D%E4%BD%BF%E7%94%A8%20%E5%B0%8F%E7%B2%92%20%E3%83%89%E3%83%A9%E3%82%A4%20%E3%83%95%E3%83%BC%E3%83%89%20%E3%82%B7%E3%83%8B%E3%82%A2%20%E3%83%91%E3%83%94%E3%83%BC%20%E3%80%90%E9%80%81%E6%96%99%E7%84%A1%E6%96%99%E3%80%91%20%E3%81%BE%E3%81%A8%E3%82%81%E8%B2%B7%E3%81%84%20%E3%81%8C%E3%81%8A%E5%BE%97%EF%BC%81","a_id":3934556,"p_id":1225,"pl_id":27061,"pc_id":1925,"s_n":"yahoo","u_so":3}],"eid":"uzJwG","s":"s"});</script><div id="msmaflink-uzJwG">リンク</div>
+                            </div>
+                            <!-- MoshimoAffiliateEasyLink END -->
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ランキング3位 -->
+                    <div class="ranking-item rank-3">
+                        <div class="rank-badge">
+                            <span class="rank-number">3</span>
+                            <span class="rank-label">位</span>
+                        </div>
+                        <div class="product-image">
+                            <img src="images/canagan.jpg" alt="カナガン チキン ドッグフード" class="product-img">
+                            <div class="price-tag">1日約201円</div>
+                        </div>
+                        <div class="product-info">
+                            <h4 class="product-name">カナガン チキン</h4>
+                            <div class="product-rating">
+                                <span class="rating-badge s-rank">Sランク</span>
+                                <div class="stars">★★★★★</div>
+                            </div>
+                            <p class="product-description">
+                                イギリス発グレインフリーフード。放し飼いチキン51%配合。1日約201円でプレミアムフードとしてはコスパ良好。
+                            </p>
+                            <div class="product-features">
+                                <span class="feature-tag">グレインフリー</span>
+                                <span class="feature-tag">高たんぱく</span>
+                                <span class="feature-tag">コスパ良好</span>
+                            </div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="affiliate-btn primary" data-product="canagan">
+                                <i class="fas fa-external-link-alt"></i>
+                                公式サイトで詳細を見る
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ランキング4位 -->
+                    <div class="ranking-item rank-4">
+                        <div class="rank-badge">
+                            <span class="rank-number">4</span>
+                            <span class="rank-label">位</span>
+                        </div>
+                        <div class="product-image">
+                            <img src="images/mishone.jpg" alt="ミシュワン小型犬用 ドッグフード" class="product-img">
+                            <div class="price-tag">初回半額</div>
+                        </div>
+                        <div class="product-info">
+                            <h4 class="product-name">ミシュワン小型犬用</h4>
+                            <div class="product-rating">
+                                <span class="rating-badge s-rank">Sランク</span>
+                                <div class="stars">★★★★★</div>
+                            </div>
+                            <p class="product-description">
+                                獣医師とペット栄養管理士が開発した小型犬専用レシピ。国産鶏肉・馬肉・マグロ配合。粒は約9×6mmで小型犬が食べやすい設計。
+                            </p>
+                            <div class="product-features">
+                                <span class="feature-tag">小型犬専用</span>
+                                <span class="feature-tag">国産</span>
+                                <span class="feature-tag">獣医師開発</span>
+                            </div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="affiliate-btn primary" data-product="mishone">
+                                <i class="fas fa-external-link-alt"></i>
+                                公式サイトで詳細を見る
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ランキング5位 -->
+                    <div class="ranking-item rank-5">
+                        <div class="rank-badge">
+                            <span class="rank-number">5</span>
+                            <span class="rank-label">位</span>
+                        </div>
+                        <div class="product-image">
+                            <img src="images/essential.jpg" alt="エッセンシャルドッグフード" class="product-img">
+                            <div class="price-tag">アレルギー対応</div>
+                        </div>
+                        <div class="product-info">
+                            <h4 class="product-name">エッセンシャルドッグフード</h4>
+                            <div class="product-rating">
+                                <span class="rating-badge s-rank">Sランク</span>
+                                <div class="stars">★★★★★</div>
+                            </div>
+                            <p class="product-description">
+                                レティシアン社の低アレルゲン魚フード。サーモン・トラウト・ニシン・白身魚使用。グレインフリーでアレルギーの愛犬も安心。
+                            </p>
+                            <div class="product-features">
+                                <span class="feature-tag">低アレルゲン</span>
+                                <span class="feature-tag">魚主体</span>
+                                <span class="feature-tag">グレインフリー</span>
+                            </div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="affiliate-btn primary" data-product="essential">
+                                <i class="fas fa-external-link-alt"></i>
+                                公式サイトで詳細を見る
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ランキング6位〜9位を簡潔に表示 -->
+                    <div class="ranking-item-compact">
+                        <div class="compact-rank">6位</div>
+                        <div class="compact-info">
+                            <h5>大型犬のためのこのこのごはん</h5>
+                            <span class="rating-badge s-rank">Sランク</span>
+                            <button class="affiliate-btn compact" data-product="konokonogohan-large">詳細を見る</button>
+                        </div>
+                    </div>
+
+                    <div class="ranking-item-compact">
+                        <div class="compact-rank">7位</div>
+                        <div class="compact-info">
+                            <h5>ココグルメ</h5>
+                            <span class="rating-badge s-rank">Sランク</span>
+                            <button class="affiliate-btn compact" data-product="cocogourmet">詳細を見る</button>
+                        </div>
+                    </div>
+
+                    <div class="ranking-item-compact">
+                        <div class="compact-rank">8位</div>
+                        <div class="compact-info">
+                            <h5>OBREMO (オブレモ)</h5>
+                            <span class="rating-badge s-rank">Sランク</span>
+                            <button class="affiliate-btn compact" data-product="obremo">詳細を見る</button>
+                        </div>
+                    </div>
+
+                    <div class="ranking-item-compact">
+                        <div class="compact-rank">9位</div>
+                        <div class="compact-info">
+                            <h5>ペルシア (PELTHIA)</h5>
+                            <span class="rating-badge s-rank">Sランク</span>
+                            <button class="affiliate-btn compact" data-product="pelthia">詳細を見る</button>
+                        </div>
+                    </div>
+
+                    <div class="ranking-item-compact">
+                        <div class="compact-rank">10位</div>
+                        <div class="compact-info">
+                            <h5>ナチュロル</h5>
+                            <span class="rating-badge a-rank">Aランク</span>
+                            <button class="affiliate-btn compact" data-product="naturol">詳細を見る</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- プロフィール設定画面 -->
+        <div id="profile-screen" class="screen hidden">
+            <div class="screen-header">
+                <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+                <h2>プロフィール設定</h2>
+            </div>
+            <div class="profile-content">
+                <div class="profile-form">
+                    <div class="form-group">
+                        <label>プロフィール画像</label>
+                        <div class="image-upload-section">
+                            <input type="file" id="profile-image-input" accept="image/*" class="hidden">
+                            <div class="image-preview" id="image-preview">
+                                <div class="upload-placeholder">
+                                    <i class="fas fa-camera"></i>
+                                    <span>クリックして画像を選択</span>
+                                </div>
+                                <img id="preview-img" class="preview-image hidden" alt="プレビュー">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>愛犬の名前</label>
+                        <input type="text" id="dog-name" placeholder="ポチ">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>犬種</label>
+                        <select id="dog-breed">
+                            <!-- 50犬種のオプションを動的に追加 -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>生年月日</label>
+                        <input type="date" id="dog-birthday">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>性別</label>
+                        <select id="dog-gender">
+                            <option value="">選択してください</option>
+                            <option value="male">オス</option>
+                            <option value="female">メス</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>体重</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="dog-current-weight" placeholder="5.0" step="0.1">
+                            <span class="unit">kg</span>
+                        </div>
+                    </div>
+                    
+                    <button id="save-profile" class="primary-btn">
+                        <i class="fas fa-save"></i> 保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- モーダル -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">タイトル</h3>
+                <button id="modal-close" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="modal-body" class="modal-body">
+                <!-- 動的コンテンツ -->
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
