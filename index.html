@@ -3,477 +3,684 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>わんスマート - 犬の散歩・ソーシャルアプリ</title>
+    <title>DogLife - 愛犬のいろいろ、これ1台。</title>
     <link rel="stylesheet" href="css/style.css">
-    <!-- Leaflet CSS for OpenStreetMap -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Google Identity Services removed - using Firebase Auth instead -->
-    <!-- Google Maps JavaScript API - Temporarily disabled due to billing -->
-    <!-- <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBu63l8Orqplq2EnLTkigilHQBeBpVvXLc&callback=initMap"></script> -->
-    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
-    <!-- Firebase Storage は Base64 を使用するため不要 -->
-    <!-- <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"></script> -->
-    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js"></script>
-    <!-- Leaflet JavaScript for OpenStreetMap -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="css/dashboard-redesign.css">
+    <link rel="stylesheet" href="css/ultra-modern-dashboard.css">
+    <!-- Firebase v9 SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <!-- ログイン画面 -->
-        <div id="login-screen" class="screen">
-            <div class="login-container">
-                <div class="logo-section">
-                    <div class="logo">🐕 わんスマート</div>
-                    <p class="tagline">愛犬と一緒に楽しい散歩を</p>
+    <!-- ログイン画面 -->
+    <div id="login-screen" class="screen">
+        <div class="login-container">
+            <div class="hero-section">
+                <div class="hero-content">
+                    <div class="app-logo-main">
+                        <img src="images/wansmart-logo.png" alt="WANSMART" class="main-logo">
+                    </div>
+                    <h1 class="hero-title">愛犬のいろいろ、<br>これ1台。</h1>
+                    <p class="hero-subtitle">餌量計算・ワクチン管理・イベント情報<br>愛犬の健康と幸せを総合サポート</p>
+                </div>
+                <div class="hero-image">
+                    <img src="images/dog-hero.png" alt="Dog illustration" class="dog-illustration">
+                </div>
+            </div>
+            
+            <div class="features-preview">
+                <div class="feature-item">
+                    <i class="fas fa-calculator"></i>
+                    <span>餌量計算</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-syringe"></i>
+                    <span>ワクチン管理</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>イベント情報</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-star"></i>
+                    <span>フードランキング</span>
+                </div>
+            </div>
+            
+            <div class="login-actions">
+                <button id="google-login-btn" class="google-login-btn">
+                    <i class="fab fa-google"></i>
+                    <span>Googleで始める</span>
+                </button>
+                <p class="login-note">無料で利用できます</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- メインアプリ画面 -->
+    <div id="main-app" class="screen hidden">
+        <!-- ヘッダー -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="app-logo-small">
+                        <img src="images/wansmart-logo.png" alt="WANSMART" class="header-logo">
+                    </div>
+                </div>
+                <div class="header-right">
+                    <button id="notifications-btn" class="icon-btn notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span id="notification-badge" class="notification-badge hidden">0</span>
+                    </button>
+                    <button id="profile-btn" class="icon-btn">
+                        <i class="fas fa-user-circle"></i>
+                    </button>
+                    <button id="logout-btn" class="icon-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ダッシュボード -->
+        <div id="dashboard" class="main-content">
+            <!-- ヒーローセクション -->
+            <div class="dashboard-hero">
+                <div class="hero-background">
+                    <div class="hero-overlay">
+                        <div class="welcome-content">
+                            <div class="greeting-section">
+                                <h1 id="welcome-message" class="hero-greeting">こんにちは！</h1>
+                                <p id="dog-info" class="dog-info-hero">プロフィールを設定してください</p>
+                                <button id="setup-profile-btn" class="setup-btn">設定はこちら</button>
+                            </div>
+                            <div class="dog-avatar-hero">
+                                <div id="dog-breed-icon" class="breed-icon-hero">
+                                    <img id="profile-avatar" src="" alt="" class="profile-image hidden">
+                                    <div class="emoji-placeholder">🐕</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- メイン機能ナビゲーション -->
+            <div class="features-navigation">
+                <h2 class="section-title">愛犬のケアメニュー</h2>
+                <div class="feature-grid">
+                    <div class="feature-card primary" data-action="food-calculator">
+                        <div class="feature-icon-wrapper">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h3>餌量計算</h3>
+                            <p>体重・年齢に合わせた最適な餌量を自動計算</p>
+                        </div>
+                        <div class="feature-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card premium" data-action="food-ranking">
+                        <div class="feature-icon-wrapper">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h3>フードランキング</h3>
+                            <p>厳選ドッグフード・専門家おすすめ商品</p>
+                        </div>
+                        <div class="feature-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card accent" data-action="events">
+                        <div class="feature-icon-wrapper">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h3>イベント情報</h3>
+                            <p>全国の犬関連イベント・ドッグラン情報</p>
+                        </div>
+                        <div class="feature-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card secondary" data-action="vaccine-record">
+                        <div class="feature-icon-wrapper">
+                            <i class="fas fa-syringe"></i>
+                        </div>
+                        <div class="feature-info">
+                            <h3>ワクチン記録</h3>
+                            <p>接種履歴管理・次回予定日の通知</p>
+                        </div>
+                        <div class="feature-arrow">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 餌量計算画面 -->
+        <div id="food-calculator" class="screen hidden">
+            <div class="screen-header">
+                <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+                <h2>餌量計算</h2>
+            </div>
+            <div class="calculator-content">
+                <div class="input-section">
+                    <div class="input-group">
+                        <label>現在の体重</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="dog-weight" placeholder="5.0" step="0.1">
+                            <span class="unit">kg</span>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>年齢</label>
+                        <select id="dog-age-category">
+                            <option value="puppy">子犬（2-12ヶ月）</option>
+                            <option value="adult">成犬（1-7歳）</option>
+                            <option value="senior">シニア犬（7歳以上）</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>活動レベル</label>
+                        <select id="activity-level">
+                            <option value="low">低い（室内中心）</option>
+                            <option value="moderate">普通（散歩1-2回/日）</option>
+                            <option value="high">高い（運動量多い）</option>
+                        </select>
+                    </div>
+                    
+                    <button id="calculate-food" class="primary-btn">
+                        <i class="fas fa-calculator"></i> 計算する
+                    </button>
                 </div>
                 
-                <div class="login-buttons">
-                    <button id="google-login-btn" class="google-login-btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24">
-                            <path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                            <path fill="#34a853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path fill="#fbbc05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                            <path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                        </svg>
-                        Googleでログイン
+                <div id="food-result" class="result-section hidden">
+                    <div class="result-card">
+                        <h3>推奨餌量</h3>
+                        <div class="result-value">
+                            <span id="daily-amount" class="amount">150</span>
+                            <span class="unit">g/日</span>
+                        </div>
+                        <div class="result-breakdown">
+                            <div class="meal-info">
+                                <span>朝食: <strong id="morning-amount">75g</strong></span>
+                                <span>夕食: <strong id="evening-amount">75g</strong></span>
+                            </div>
+                        </div>
+                        <div class="result-note">
+                            <i class="fas fa-info-circle"></i>
+                            <p>この量は目安です。愛犬の体調を見ながら調整してください。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ワクチン記録画面 -->
+        <div id="vaccine-record" class="screen hidden">
+            <div class="screen-header">
+                <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+                <h2>ワクチン記録</h2>
+                <button id="add-vaccine" class="icon-btn">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="vaccine-content">
+                <!-- 通知エリア -->
+                <div id="vaccine-notifications" class="notification-area">
+                    <!-- 動的に追加 -->
+                </div>
+                
+                <!-- ワクチンタブ -->
+                <div class="vaccine-tabs">
+                    <button class="vaccine-tab active" data-type="all">全て</button>
+                    <button class="vaccine-tab" data-type="rabies">狂犬病</button>
+                    <button class="vaccine-tab" data-type="mixed">混合ワクチン</button>
+                </div>
+                
+                <!-- ワクチンリスト -->
+                <div id="vaccine-list" class="vaccine-list">
+                    <!-- 動的に追加 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- ワクチン登録モーダル -->
+        <div id="vaccine-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="vaccine-modal-title">ワクチン接種記録</h3>
+                    <button id="vaccine-modal-close" class="close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="vaccine-form">
+                        <div class="form-group">
+                            <label>ワクチン種類</label>
+                            <select id="vaccine-type" required>
+                                <option value="">選択してください</option>
+                                <option value="rabies">狂犬病ワクチン</option>
+                                <option value="mixed">混合ワクチン</option>
+                            </select>
+                        </div>
+                        
+                        <div id="mixed-vaccine-options" class="form-group hidden">
+                            <label>混合ワクチン種類</label>
+                            <select id="mixed-vaccine-count">
+                                <option value="">選択してください</option>
+                                <option value="5">5種混合</option>
+                                <option value="6">6種混合</option>
+                                <option value="8">8種混合</option>
+                                <option value="9">9種混合</option>
+                                <option value="10">10種混合</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>接種日</label>
+                            <input type="date" id="vaccine-date" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>動物病院名（任意）</label>
+                            <input type="text" id="clinic-name" placeholder="○○動物病院">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>メモ（任意）</label>
+                            <textarea id="vaccine-memo" placeholder="副作用や気になったことなど" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="modal-actions">
+                            <button type="button" id="cancel-vaccine" class="secondary-btn">キャンセル</button>
+                            <button type="submit" class="primary-btn">
+                                <i class="fas fa-save"></i> 保存
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- イベント情報画面 -->
+        <div id="events" class="screen hidden">
+            <div class="screen-header">
+                <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+                <h2>イベント情報</h2>
+                <button id="filter-events" class="icon-btn">
+                    <i class="fas fa-filter"></i>
+                </button>
+            </div>
+            <div class="events-content">
+                <div class="events-filter">
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="all">すべて</button>
+                        <button class="filter-tab" data-filter="show">ドッグショー</button>
+                        <button class="filter-tab" data-filter="training">しつけ教室</button>
+                        <button class="filter-tab" data-filter="meet">オフ会</button>
+                    </div>
+                </div>
+                <div id="events-list" class="events-list">
+                    <!-- 動的に追加 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- フードランキング画面 -->
+        <div id="food-ranking" class="screen hidden">
+            <div class="screen-header">
+                <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+                <h2>フードランキング</h2>
+            </div>
+            <div class="ranking-content">
+                <div class="ranking-hero">
+                    <h3>2025年版 人気ドッグフードおすすめランキングTOP10</h3>
+                    <p class="ranking-subtitle">全年齢の愛犬に安心して与えられる人気ドッグフードを多角的に評価</p>
+                </div>
+                <div id="food-ranking-list" class="ranking-list">
+                    <!-- ランキング1位 -->
+                    <div class="ranking-item rank-1">
+                        <div class="rank-badge">
+                            <span class="rank-number">1</span>
+                            <span class="rank-label">位</span>
+                        </div>
+                        <div class="product-image">
+                            <img src="images/mogwan.jpg" alt="モグワン ドッグフード" class="product-img">
+                            <div class="price-tag">1日約251円</div>
+                        </div>
+                        <div class="product-info">
+                            <h4 class="product-name">モグワン</h4>
+                            <div class="product-rating">
+                                <span class="rating-badge s-rank">Sランク</span>
+                                <div class="stars">★★★★★</div>
+                            </div>
+                            <p class="product-description">
+                                イギリス産プレミアムフード。放し飼いチキンと生サーモン50%以上使用。ヒューマングレード&無添加で1日約251円とコスパ優秀。
+                            </p>
+                            <div class="product-features">
+                                <span class="feature-tag">グレインフリー</span>
+                                <span class="feature-tag">高タンパク</span>
+                                <span class="feature-tag">無添加</span>
+                            </div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="affiliate-btn primary" data-product="mogwan">
+                                <i class="fas fa-external-link-alt"></i>
+                                公式サイトで詳細を見る
+                            </button>
+                            
+                            <!-- START MoshimoAffiliateEasyLink -->
+                            <div class="moshimo-affiliate-section">
+                                <p class="shopping-label">🛒 通販サイトで探す</p>
+                                <script type="text/javascript">(function(b,c,f,g,a,d,e){b.MoshimoAffiliateObject=a;b[a]=b[a]||function(){arguments.currentScript=c.currentScript||c.scripts[c.scripts.length-2];(b[a].q=b[a].q||[]).push(arguments)};c.getElementById(a)||(d=c.createElement(f),d.src=g,d.id=a,e=c.getElementsByTagName("body")[0],e.appendChild(d))})(window,document,"script","//dn.msmstatic.com/site/cardlink/bundle.js?20220329","msmaflink");msmaflink({"n":"モグワンドッグフード チキン&サーモン (1.8kg) グレインフリー　香料・着色料不使用 全犬種・全年齢対応","b":"","t":"","d":"https://thumbnail.image.rakuten.co.jp","c_p":"/@0_mall/shop-f-osaka/cabinet","p":["/compass1753662359.jpg","/compass1717654911.jpg"],"u":{"u":"https://item.rakuten.co.jp/shop-f-osaka/10000628/","t":"rakuten","r_v":""},"v":"2.1","b_l":[{"id":1,"u_tx":"楽天市場で見る","u_bc":"#f76956","u_url":"https://item.rakuten.co.jp/shop-f-osaka/10000628/","a_id":3934554,"p_id":54,"pl_id":27059,"pc_id":54,"s_n":"rakuten","u_so":1},{"id":2,"u_tx":"Amazonで見る","u_bc":"#f79256","u_url":"https://www.amazon.co.jp/s/ref=nb_sb_noss_1?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Daps&field-keywords=%E3%83%A2%E3%82%B0%E3%83%AF%E3%83%B3%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%89%20%E3%83%81%E3%82%AD%E3%83%B3%26%E3%82%B5%E3%83%BC%E3%83%A2%E3%83%B3%20(1.8kg)%20%E3%82%B0%E3%83%AC%E3%82%A4%E3%83%B3%E3%83%95%E3%83%AA%E3%83%BC%E3%80%80%E9%A6%99%E6%96%99%E3%83%BB%E7%9D%80%E8%89%B2%E6%96%99%E4%B8%8D%E4%BD%BF%E7%94%A8%20%E5%85%A8%E7%8A%AC%E7%A8%AE%E3%83%BB%E5%85%A8%E5%B9%B4%E9%BD%A2%E5%AF%BE%E5%BF%9C","a_id":3819568,"p_id":170,"pl_id":27060,"pc_id":185,"s_n":"amazon","u_so":2},{"id":3,"u_tx":"Yahoo!ショッピングで見る","u_bc":"#66a7ff","u_url":"https://shopping.yahoo.co.jp/search?first=1&p=%E3%83%A2%E3%82%B0%E3%83%AF%E3%83%B3%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%89%20%E3%83%81%E3%82%AD%E3%83%B3%26%E3%82%B5%E3%83%BC%E3%83%A2%E3%83%B3%20(1.8kg)%20%E3%82%B0%E3%83%AC%E3%82%A4%E3%83%B3%E3%83%95%E3%83%AA%E3%83%BC%E3%80%80%E9%A6%99%E6%96%99%E3%83%BB%E7%9D%80%E8%89%B2%E6%96%99%E4%B8%8D%E4%BD%BF%E7%94%A8%20%E5%85%A8%E7%8A%AC%E7%A8%AE%E3%83%BB%E5%85%A8%E5%B9%B4%E9%BD%A2%E5%AF%BE%E5%BF%9C","a_id":3934556,"p_id":1225,"pl_id":27061,"pc_id":1925,"s_n":"yahoo","u_so":3}],"eid":"6QyYI","s":"s"});</script><div id="msmaflink-6QyYI">リンク</div>
+                            </div>
+                            <!-- MoshimoAffiliateEasyLink END -->
+                        </div>
+                    </div>
+
+                    <!-- ランキング2位 -->
+                    <div class="ranking-item rank-2">
+                        <div class="rank-badge">
+                            <span class="rank-number">2</span>
+                            <span class="rank-label">位</span>
+                        </div>
+                        <div class="product-image">
+                            <img src="images/umaka.png" alt="うまか UMAKA ドッグフード" class="product-img">
+                            <div class="price-tag">国産無添加</div>
+                        </div>
+                        <div class="product-info">
+                            <h4 class="product-name">うまか (UMAKA)</h4>
+                            <div class="product-rating">
+                                <span class="rating-badge s-rank">Sランク</span>
+                                <div class="stars">★★★★★</div>
+                            </div>
+                            <p class="product-description">
+                                九州産銘柄鶏「華味鳥」100%使用。かつお節だし仕立てで抜群の食いつき。人間が食べても美味しいと評判。
+                            </p>
+                            <div class="product-features">
+                                <span class="feature-tag">高い嗜好性</span>
+                                <span class="feature-tag">国産</span>
+                                <span class="feature-tag">だし風味</span>
+                            </div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="affiliate-btn primary" data-product="umaka">
+                                <i class="fas fa-external-link-alt"></i>
+                                公式サイトで詳細を見る
+                            
+                            <!-- START MoshimoAffiliateEasyLink -->
+                            <div class="moshimo-affiliate-section">
+                                <p class="shopping-label">🛒 通販サイトで探す</p>
+                                <script type="text/javascript">(function(b,c,f,g,a,d,e){b.MoshimoAffiliateObject=a;b[a]=b[a]||function(){arguments.currentScript=c.currentScript||c.scripts[c.scripts.length-2];(b[a].q=b[a].q||[]).push(arguments)};c.getElementById(a)||(d=c.createElement(f),d.src=g,d.id=a,e=c.getElementsByTagName("body")[0],e.appendChild(d))})(window,document,"script","//dn.msmstatic.com/site/cardlink/bundle.js?20220329","msmaflink");msmaflink({"n":"【公式】 ドッグフード うまか 1.5kg 小型犬 国産 チキン 総合栄養食 全犬種 全年齢 保存料・酸化防止剤 無添加 着色料・香料不使用 小粒 ドライ フード シニア パピー 【送料無料】 まとめ買い がお得！","b":"","t":"","d":"https://thumbnail.image.rakuten.co.jp","c_p":"/@0_mall/inuneko-sukoyaka/cabinet/syouhin01","p":["/imgrc0088152201.jpg","/imgrc0088152251.jpg","/imgrc0088152250.jpg"],"u":{"u":"https://item.rakuten.co.jp/inuneko-sukoyaka/001/","t":"rakuten","r_v":""},"v":"2.1","b_l":[{"id":1,"u_tx":"楽天市場で見る","u_bc":"#f76956","u_url":"https://item.rakuten.co.jp/inuneko-sukoyaka/001/","a_id":3934554,"p_id":54,"pl_id":27059,"pc_id":54,"s_n":"rakuten","u_so":1},{"id":2,"u_tx":"Amazonで見る","u_bc":"#f79256","u_url":"https://www.amazon.co.jp/s/ref=nb_sb_noss_1?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Daps&field-keywords=%E3%80%90%E5%85%AC%E5%BC%8F%E3%80%91%20%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%89%20%E3%81%86%E3%81%BE%E3%81%8B%201.5kg%20%E5%B0%8F%E5%9E%8B%E7%8A%AC%20%E5%9B%BD%E7%94%A3%20%E3%83%81%E3%82%AD%E3%83%B3%20%E7%B7%8F%E5%90%88%E6%A0%84%E9%A4%8A%E9%A3%9F%20%E5%85%A8%E7%8A%AC%E7%A8%AE%20%E5%85%A8%E5%B9%B4%E9%BD%A2%20%E4%BF%9D%E5%AD%98%E6%96%99%E3%83%BB%E9%85%B8%E5%8C%96%E9%98%B2%E6%AD%A2%E5%89%A4%20%E7%84%A1%E6%B7%BB%E5%8A%A0%20%E7%9D%80%E8%89%B2%E6%96%99%E3%83%BB%E9%A6%99%E6%96%99%E4%B8%8D%E4%BD%BF%E7%94%A8%20%E5%B0%8F%E7%B2%92%20%E3%83%89%E3%83%A9%E3%82%A4%20%E3%83%95%E3%83%BC%E3%83%89%20%E3%82%B7%E3%83%8B%E3%82%A2%20%E3%83%91%E3%83%94%E3%83%BC%20%E3%80%90%E9%80%81%E6%96%99%E7%84%A1%E6%96%99%E3%80%91%20%E3%81%BE%E3%81%A8%E3%82%81%E8%B2%B7%E3%81%84%20%E3%81%8C%E3%81%8A%E5%BE%97%EF%BC%81","a_id":3819568,"p_id":170,"pl_id":27060,"pc_id":185,"s_n":"amazon","u_so":2},{"id":3,"u_tx":"Yahoo!ショッピングで見る","u_bc":"#66a7ff","u_url":"https://shopping.yahoo.co.jp/search?first=1&p=%E3%80%90%E5%85%AC%E5%BC%8F%E3%80%91%20%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%89%20%E3%81%86%E3%81%BE%E3%81%8B%201.5kg%20%E5%B0%8F%E5%9E%8B%E7%8A%AC%20%E5%9B%BD%E7%94%A3%20%E3%83%81%E3%82%AD%E3%83%B3%20%E7%B7%8F%E5%90%88%E6%A0%84%E9%A4%8A%E9%A3%9F%20%E5%85%A8%E7%8A%AC%E7%A8%AE%20%E5%85%A8%E5%B9%B4%E9%BD%A2%20%E4%BF%9D%E5%AD%98%E6%96%99%E3%83%BB%E9%85%B8%E5%8C%96%E9%98%B2%E6%AD%A2%E5%89%A4%20%E7%84%A1%E6%B7%BB%E5%8A%A0%20%E7%9D%80%E8%89%B2%E6%96%99%E3%83%BB%E9%A6%99%E6%96%99%E4%B8%8D%E4%BD%BF%E7%94%A8%20%E5%B0%8F%E7%B2%92%20%E3%83%89%E3%83%A9%E3%82%A4%20%E3%83%95%E3%83%BC%E3%83%89%20%E3%82%B7%E3%83%8B%E3%82%A2%20%E3%83%91%E3%83%94%E3%83%BC%20%E3%80%90%E9%80%81%E6%96%99%E7%84%A1%E6%96%99%E3%80%91%20%E3%81%BE%E3%81%A8%E3%82%81%E8%B2%B7%E3%81%84%20%E3%81%8C%E3%81%8A%E5%BE%97%EF%BC%81","a_id":3934556,"p_id":1225,"pl_id":27061,"pc_id":1925,"s_n":"yahoo","u_so":3}],"eid":"uzJwG","s":"s"});</script><div id="msmaflink-uzJwG">リンク</div>
+                            </div>
+                            <!-- MoshimoAffiliateEasyLink END -->
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ランキング3位 -->
+                    <div class="ranking-item rank-3">
+                        <div class="rank-badge">
+                            <span class="rank-number">3</span>
+                            <span class="rank-label">位</span>
+                        </div>
+                        <div class="product-image">
+                            <img src="images/canagan.jpg" alt="カナガン チキン ドッグフード" class="product-img">
+                            <div class="price-tag">1日約201円</div>
+                        </div>
+                        <div class="product-info">
+                            <h4 class="product-name">カナガン チキン</h4>
+                            <div class="product-rating">
+                                <span class="rating-badge s-rank">Sランク</span>
+                                <div class="stars">★★★★★</div>
+                            </div>
+                            <p class="product-description">
+                                イギリス発グレインフリーフード。放し飼いチキン51%配合。1日約201円でプレミアムフードとしてはコスパ良好。
+                            </p>
+                            <div class="product-features">
+                                <span class="feature-tag">グレインフリー</span>
+                                <span class="feature-tag">高たんぱく</span>
+                                <span class="feature-tag">コスパ良好</span>
+                            </div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="affiliate-btn primary" data-product="canagan">
+                                <i class="fas fa-external-link-alt"></i>
+                                公式サイトで詳細を見る
+                            
+                            <!-- START MoshimoAffiliateEasyLink -->
+                            <div class="moshimo-affiliate-section">
+                                <p class="shopping-label">🛒 通販サイトで探す</p>
+                                <script type="text/javascript">(function(b,c,f,g,a,d,e){b.MoshimoAffiliateObject=a;b[a]=b[a]||function(){arguments.currentScript=c.currentScript||c.scripts[c.scripts.length-2];(b[a].q=b[a].q||[]).push(arguments)};c.getElementById(a)||(d=c.createElement(f),d.src=g,d.id=a,e=c.getElementsByTagName("body")[0],e.appendChild(d))})(window,document,"script","//dn.msmstatic.com/site/cardlink/bundle.js?20220329","msmaflink");msmaflink({"n":"カナガン ドッグフード チキン 2kg グレインフリー 全犬種 全年齢対応 犬用 CANAGAN","b":"","t":"","d":"https://thumbnail.image.rakuten.co.jp","c_p":"/@0_mall/shop-f-osaka/cabinet","p":["/compass1749634899.jpg","/compass1718773526.jpg"],"u":{"u":"https://item.rakuten.co.jp/shop-f-osaka/compass1718773647/","t":"rakuten","r_v":""},"v":"2.1","b_l":[{"id":1,"u_tx":"楽天市場で見る","u_bc":"#f76956","u_url":"https://item.rakuten.co.jp/shop-f-osaka/compass1718773647/","a_id":3934554,"p_id":54,"pl_id":27059,"pc_id":54,"s_n":"rakuten","u_so":1},{"id":2,"u_tx":"Amazonで見る","u_bc":"#f79256","u_url":"https://www.amazon.co.jp/s/ref=nb_sb_noss_1?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Daps&field-keywords=%E3%82%AB%E3%83%8A%E3%82%AC%E3%83%B3%20%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%89%20%E3%83%81%E3%82%AD%E3%83%B3%202kg%20%E3%82%B0%E3%83%AC%E3%82%A4%E3%83%B3%E3%83%95%E3%83%AA%E3%83%BC%20%E5%85%A8%E7%8A%AC%E7%A8%AE%20%E5%85%A8%E5%B9%B4%E9%BD%A2%E5%AF%BE%E5%BF%9C%20%E7%8A%AC%E7%94%A8%20CANAGAN","a_id":3819568,"p_id":170,"pl_id":27060,"pc_id":185,"s_n":"amazon","u_so":2},{"id":3,"u_tx":"Yahoo!ショッピングで見る","u_bc":"#66a7ff","u_url":"https://shopping.yahoo.co.jp/search?first=1&p=%E3%82%AB%E3%83%8A%E3%82%AC%E3%83%B3%20%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%89%20%E3%83%81%E3%82%AD%E3%83%B3%202kg%20%E3%82%B0%E3%83%AC%E3%82%A4%E3%83%B3%E3%83%95%E3%83%AA%E3%83%BC%20%E5%85%A8%E7%8A%AC%E7%A8%AE%20%E5%85%A8%E5%B9%B4%E9%BD%A2%E5%AF%BE%E5%BF%9C%20%E7%8A%AC%E7%94%A8%20CANAGAN","a_id":3934556,"p_id":1225,"pl_id":27061,"pc_id":1925,"s_n":"yahoo","u_so":3}],"eid":"hCBms","s":"s"});</script><div id="msmaflink-hCBms">リンク</div>
+                            </div>
+                            <!-- MoshimoAffiliateEasyLink END -->
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ランキング4位 -->
+                    <div class="ranking-item rank-4">
+                        <div class="rank-badge">
+                            <span class="rank-number">4</span>
+                            <span class="rank-label">位</span>
+                        </div>
+                        <div class="product-image">
+                            <img src="images/mishone.jpg" alt="ミシュワン小型犬用 ドッグフード" class="product-img">
+                            <div class="price-tag">初回半額</div>
+                        </div>
+                        <div class="product-info">
+                            <h4 class="product-name">ミシュワン小型犬用</h4>
+                            <div class="product-rating">
+                                <span class="rating-badge s-rank">Sランク</span>
+                                <div class="stars">★★★★★</div>
+                            </div>
+                            <p class="product-description">
+                                獣医師とペット栄養管理士が開発した小型犬専用レシピ。国産鶏肉・馬肉・マグロ配合。粒は約9×6mmで小型犬が食べやすい設計。
+                            </p>
+                            <div class="product-features">
+                                <span class="feature-tag">小型犬専用</span>
+                                <span class="feature-tag">国産</span>
+                            
+                            <!-- START MoshimoAffiliateEasyLink -->
+                            <div class="moshimo-affiliate-section">
+                                <p class="shopping-label">🛒 通販サイトで探す</p>
+                                <script type="text/javascript">(function(b,c,f,g,a,d,e){b.MoshimoAffiliateObject=a;b[a]=b[a]||function(){arguments.currentScript=c.currentScript||c.scripts[c.scripts.length-2];(b[a].q=b[a].q||[]).push(arguments)};c.getElementById(a)||(d=c.createElement(f),d.src=g,d.id=a,e=c.getElementsByTagName("body")[0],e.appendChild(d))})(window,document,"script","//dn.msmstatic.com/site/cardlink/bundle.js?20220329","msmaflink");msmaflink({"n":"ミシュワン 成犬ドッグフード 国産鶏肉＆馬肉(1kg)【ミシュワン】","b":"","t":"","d":"https://thumbnail.image.rakuten.co.jp","c_p":"/@0_mall/nyanzaq/cabinet/104","p":["/4570067420104.jpg","/4570067420104-2.jpg","/4570067420104-3.jpg"],"u":{"u":"https://item.rakuten.co.jp/nyanzaq/4570067420104/","t":"rakuten","r_v":""},"v":"2.1","b_l":[{"id":1,"u_tx":"楽天市場で見る","u_bc":"#f76956","u_url":"https://item.rakuten.co.jp/nyanzaq/4570067420104/","a_id":3934554,"p_id":54,"pl_id":27059,"pc_id":54,"s_n":"rakuten","u_so":1},{"id":2,"u_tx":"Amazonで見る","u_bc":"#f79256","u_url":"https://www.amazon.co.jp/s/ref=nb_sb_noss_1?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Daps&field-keywords=%E3%83%9F%E3%82%B7%E3%83%A5%E3%83%AF%E3%83%B3%20%E6%88%90%E7%8A%AC%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%89%20%E5%9B%BD%E7%94%A3%E9%B6%8F%E8%82%89%EF%BC%86%E9%A6%AC%E8%82%89(1kg)%E3%80%90%E3%83%9F%E3%82%B7%E3%83%A5%E3%83%AF%E3%83%B3%E3%80%91","a_id":3819568,"p_id":170,"pl_id":27060,"pc_id":185,"s_n":"amazon","u_so":2},{"id":3,"u_tx":"Yahoo!ショッピングで見る","u_bc":"#66a7ff","u_url":"https://shopping.yahoo.co.jp/search?first=1&p=%E3%83%9F%E3%82%B7%E3%83%A5%E3%83%AF%E3%83%B3%20%E6%88%90%E7%8A%AC%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%89%20%E5%9B%BD%E7%94%A3%E9%B6%8F%E8%82%89%EF%BC%86%E9%A6%AC%E8%82%89(1kg)%E3%80%90%E3%83%9F%E3%82%B7%E3%83%A5%E3%83%AF%E3%83%B3%E3%80%91","a_id":3934556,"p_id":1225,"pl_id":27061,"pc_id":1925,"s_n":"yahoo","u_so":3}],"eid":"ttMAY","s":"s"});</script><div id="msmaflink-ttMAY">リンク</div>
+                            </div>
+                            <!-- MoshimoAffiliateEasyLink END -->
+                                <span class="feature-tag">獣医師開発</span>
+                            </div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="affiliate-btn primary" data-product="mishone">
+                                <i class="fas fa-external-link-alt"></i>
+                                公式サイトで詳細を見る
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ランキング5位 -->
+                    <div class="ranking-item rank-5">
+                        <div class="rank-badge">
+                            <span class="rank-number">5</span>
+                            <span class="rank-label">位</span>
+                        </div>
+                        <div class="product-image">
+                            <img src="images/essential.jpg" alt="エッセンシャルドッグフード" class="product-img">
+                            <div class="price-tag">アレルギー対応</div>
+                        </div>
+                        <div class="product-info">
+                            <h4 class="product-name">エッセンシャルドッグフード</h4>
+                            <div class="product-rating">
+                                <span class="rating-badge s-rank">Sランク</span>
+                                <div class="stars">★★★★★</div>
+                            
+                            <!-- START MoshimoAffiliateEasyLink -->
+                            <div class="moshimo-affiliate-section">
+                                <p class="shopping-label">🛒 通販サイトで探す</p>
+                                <script type="text/javascript">(function(b,c,f,g,a,d,e){b.MoshimoAffiliateObject=a;b[a]=b[a]||function(){arguments.currentScript=c.currentScript||c.scripts[c.scripts.length-2];(b[a].q=b[a].q||[]).push(arguments)};c.getElementById(a)||(d=c.createElement(f),d.src=g,d.id=a,e=c.getElementsByTagName("body")[0],e.appendChild(d))})(window,document,"script","//dn.msmstatic.com/site/cardlink/bundle.js?20220329","msmaflink");msmaflink({"n":"(株式会社レティシアン) エッセンシャルドッグフード1.8kg (ドック)(犬用)(スーパーフード配合)(1歳から)","b":"","t":"","d":"https://thumbnail.image.rakuten.co.jp","c_p":"","p":["/@0_mall/retailer/cabinet/09606003/laeti-0009-m.jpg"],"u":{"u":"https://item.rakuten.co.jp/retailer/laeti-0009/","t":"rakuten","r_v":""},"v":"2.1","b_l":[{"id":1,"u_tx":"楽天市場で見る","u_bc":"#f76956","u_url":"https://item.rakuten.co.jp/retailer/laeti-0009/","a_id":3934554,"p_id":54,"pl_id":27059,"pc_id":54,"s_n":"rakuten","u_so":1},{"id":2,"u_tx":"Amazonで見る","u_bc":"#f79256","u_url":"https://www.amazon.co.jp/s/ref=nb_sb_noss_1?__mk_ja_JP=%E3%82%AB%E3%82%BF%E3%82%AB%E3%83%8A&url=search-alias%3Daps&field-keywords=(%E6%A0%AA%E5%BC%8F%E4%BC%9A%E7%A4%BE%E3%83%AC%E3%83%86%E3%82%A3%E3%82%B7%E3%82%A2%E3%83%B3)%20%E3%82%A8%E3%83%83%E3%82%BB%E3%83%B3%E3%82%B7%E3%83%A3%E3%83%AB%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%891.8kg%20(%E3%83%89%E3%83%83%E3%82%AF)(%E7%8A%AC%E7%94%A8)(%E3%82%B9%E3%83%BC%E3%83%91%E3%83%BC%E3%83%95%E3%83%BC%E3%83%89%E9%85%8D%E5%90%88)(1%E6%AD%B3%E3%81%8B%E3%82%89)","a_id":3819568,"p_id":170,"pl_id":27060,"pc_id":185,"s_n":"amazon","u_so":2},{"id":3,"u_tx":"Yahoo!ショッピングで見る","u_bc":"#66a7ff","u_url":"https://shopping.yahoo.co.jp/search?first=1&p=(%E6%A0%AA%E5%BC%8F%E4%BC%9A%E7%A4%BE%E3%83%AC%E3%83%86%E3%82%A3%E3%82%B7%E3%82%A2%E3%83%B3)%20%E3%82%A8%E3%83%83%E3%82%BB%E3%83%B3%E3%82%B7%E3%83%A3%E3%83%AB%E3%83%89%E3%83%83%E3%82%B0%E3%83%95%E3%83%BC%E3%83%891.8kg%20(%E3%83%89%E3%83%83%E3%82%AF)(%E7%8A%AC%E7%94%A8)(%E3%82%B9%E3%83%BC%E3%83%91%E3%83%BC%E3%83%95%E3%83%BC%E3%83%89%E9%85%8D%E5%90%88)(1%E6%AD%B3%E3%81%8B%E3%82%89)","a_id":3934556,"p_id":1225,"pl_id":27061,"pc_id":1925,"s_n":"yahoo","u_so":3}],"eid":"geSEJ","s":"s"});</script><div id="msmaflink-geSEJ">リンク</div>
+                            </div>
+                            <!-- MoshimoAffiliateEasyLink END -->
+                            </div>
+                            <p class="product-description">
+                                レティシアン社の低アレルゲン魚フード。サーモン・トラウト・ニシン・白身魚使用。グレインフリーでアレルギーの愛犬も安心。
+                            </p>
+                            <div class="product-features">
+                                <span class="feature-tag">低アレルゲン</span>
+                                <span class="feature-tag">魚主体</span>
+                                <span class="feature-tag">グレインフリー</span>
+                            </div>
+                        </div>
+                        <div class="product-actions">
+                            <button class="affiliate-btn primary" data-product="essential">
+                                <i class="fas fa-external-link-alt"></i>
+                                公式サイトで詳細を見る
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ランキング6位〜9位を簡潔に表示 -->
+                    <div class="ranking-item-compact">
+                        <div class="compact-rank">6位</div>
+                        <div class="compact-info">
+                            <h5>大型犬のためのこのこのごはん</h5>
+                            <span class="rating-badge s-rank">Sランク</span>
+                            <button class="affiliate-btn compact" data-product="konokonogohan-large">詳細を見る</button>
+                        </div>
+                    </div>
+
+                    <div class="ranking-item-compact">
+                        <div class="compact-rank">7位</div>
+                        <div class="compact-info">
+                            <h5>ココグルメ</h5>
+                            <span class="rating-badge s-rank">Sランク</span>
+                            <button class="affiliate-btn compact" data-product="cocogourmet">詳細を見る</button>
+                        </div>
+                    </div>
+
+                    <div class="ranking-item-compact">
+                        <div class="compact-rank">8位</div>
+                        <div class="compact-info">
+                            <h5>OBREMO (オブレモ)</h5>
+                            <span class="rating-badge s-rank">Sランク</span>
+                            <button class="affiliate-btn compact" data-product="obremo">詳細を見る</button>
+                        </div>
+                    </div>
+
+                    <div class="ranking-item-compact">
+                        <div class="compact-rank">9位</div>
+                        <div class="compact-info">
+                            <h5>ペルシア (PELTHIA)</h5>
+                            <span class="rating-badge s-rank">Sランク</span>
+                            <button class="affiliate-btn compact" data-product="pelthia">詳細を見る</button>
+                        </div>
+                    </div>
+
+                    <div class="ranking-item-compact">
+                        <div class="compact-rank">10位</div>
+                        <div class="compact-info">
+                            <h5>ナチュロル</h5>
+                            <span class="rating-badge a-rank">Aランク</span>
+                            <button class="affiliate-btn compact" data-product="naturol">詳細を見る</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- プロフィール設定画面 -->
+        <div id="profile-screen" class="screen hidden">
+            <div class="screen-header">
+                <button class="back-btn"><i class="fas fa-arrow-left"></i></button>
+                <h2>プロフィール設定</h2>
+            </div>
+            <div class="profile-content">
+                <div class="profile-form">
+                    <div class="form-group">
+                        <label>プロフィール画像</label>
+                        <div class="image-upload-section">
+                            <input type="file" id="profile-image-input" accept="image/*" class="hidden">
+                            <div class="image-preview" id="image-preview">
+                                <div class="upload-placeholder">
+                                    <i class="fas fa-camera"></i>
+                                    <span>クリックして画像を選択</span>
+                                </div>
+                                <img id="preview-img" class="preview-image hidden" alt="プレビュー">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>愛犬の名前</label>
+                        <input type="text" id="dog-name" placeholder="ポチ">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>犬種</label>
+                        <select id="dog-breed">
+                            <!-- 50犬種のオプションを動的に追加 -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>生年月日</label>
+                        <input type="date" id="dog-birthday">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>性別</label>
+                        <select id="dog-gender">
+                            <option value="">選択してください</option>
+                            <option value="male">オス</option>
+                            <option value="female">メス</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>体重</label>
+                        <div class="input-with-unit">
+                            <input type="number" id="dog-current-weight" placeholder="5.0" step="0.1">
+                            <span class="unit">kg</span>
+                        </div>
+                    </div>
+                    
+                    <button id="save-profile" class="primary-btn">
+                        <i class="fas fa-save"></i> 保存
                     </button>
                 </div>
             </div>
         </div>
-
-        <!-- メインアプリ画面 -->
-        <div id="main-app" class="screen hidden">
-            <header>
-                <div class="header-content">
-                    <div class="logo">🐕 わんスマート</div>
-                    <button id="logout-btn" class="logout-btn">ログアウト</button>
-                </div>
-            </header>
-            
-            <nav class="nav-tabs">
-                <button class="tab active" data-tab="map">マップ</button>
-                <button class="tab" data-tab="history">履歴</button>
-                <button class="tab" data-tab="profile">プロフィール</button>
-                <button class="tab" data-tab="friends">友達</button>
-                <button class="tab" data-tab="messages">メッセージ</button>
-            </nav>
-            
-            <!-- マップタブ -->
-            <div id="map-tab" class="tab-content active">
-                <div class="content">
-                    <!-- アクションボタンエリア -->
-                    <div class="action-buttons-section">
-                        <div class="action-buttons">
-                            <button id="start-walk-btn" class="action-btn walk-btn">🚶‍♂️ 散歩開始</button>
-                            <button id="check-in-btn" class="action-btn check-in-btn">📍 チェックイン</button>
-                            <button id="check-out-btn" class="action-btn check-out-btn hidden">❌ チェックアウト</button>
-                        </div>
-                    </div>
-                    
-                    <!-- 散歩中統計表示 -->
-                    <div id="walk-stats" class="walk-stats-section hidden">
-                        <div class="walk-stats-header">
-                            <h4>🚶‍♂️ 散歩中</h4>
-                            <div class="walk-status-indicator">
-                                <div class="status-dot"></div>
-                                <span>記録中</span>
-                            </div>
-                        </div>
-                        <div class="walk-stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-icon">📏</div>
-                                <div class="stat-content">
-                                    <span id="current-distance" class="stat-number">0.00</span>
-                                    <span class="stat-label">km</span>
-                                </div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-icon">⏰</div>
-                                <div class="stat-content">
-                                    <span id="current-duration" class="stat-number">0</span>
-                                    <span class="stat-label">分</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="walk-controls">
-                            <button id="pause-walk-btn" class="walk-control-btn pause-btn">⏸️ 一時停止</button>
-                            <button id="stop-walk-btn" class="walk-control-btn stop-btn">⏹️ 終了</button>
-                        </div>
-                    </div>
-                    
-                    <!-- 無料マップ（OpenStreetMap with Leaflet） -->
-                    <div class="map-container">
-                        <div id="leaflet-map" class="map"></div>
-                        <div class="map-controls">
-                            <button id="center-map-btn" class="map-control-btn">📍 現在地</button>
-                            <button id="toggle-map-btn" class="map-control-btn">🗺️ 表示切替</button>
-                        </div>
-                    </div>
-                    
-                    <div class="location-matching">
-                        <div class="location-header">
-                            <h3>🐕 近くの散歩仲間を探す</h3>
-                            <div class="location-selector">
-                                <select id="location-select">
-                                    <option value="shibuya-park">渋谷公園</option>
-                                    <option value="yoyogi-park">代々木公園</option>
-                                    <option value="ueno-park">上野公園</option>
-                                    <option value="inokashira-park">井の頭公園</option>
-                                    <option value="komazawa-park">駒沢オリンピック公園</option>
-                                    <option value="shinjuku-central-park">新宿中央公园</option>
-                                </select>
-                                <button id="refresh-location" class="refresh-btn">🔄</button>
-                            </div>
-                        </div>
-
-                        <div class="current-location-status">
-                            <div class="status-item">
-                                <span class="status-icon">📍</span>
-                                <span class="status-text">現在地: <strong id="current-location-name">渋谷公園</strong></span>
-                            </div>
-                            <div class="status-item">
-                                <span class="status-icon">👥</span>
-                                <span class="status-text">この場所にいる人: <strong id="people-count">4人</strong></span>
-                            </div>
-                            <div class="status-item">
-                                <span class="status-icon">🕐</span>
-                                <span class="status-text">最終更新: <strong id="last-update">2分前</strong></span>
-                            </div>
-                        </div>
-
-                        <div class="location-tabs">
-                            <button class="location-tab active" data-type="park">🏞️ 公園にいる人</button>
-                            <button class="location-tab" data-type="walking">🚶‍♂️ 散歩中の人</button>
-                            <button class="location-tab" data-type="nearby">📍 近くの人</button>
-                        </div>
-
-                        <div id="location-people" class="location-people">
-                            <!-- 動的に人が追加されます -->
-                        </div>
-                    </div>
-                    
-                    <div class="nearby-section">
-                        <h3>近くの犬友達</h3>
-                        <div id="nearby-dogs" class="dog-list">
-                            <!-- 動的にデータが追加されます -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 散歩履歴タブ -->
-            <div id="history-tab" class="tab-content">
-                <div class="content">
-                    <h3>散歩履歴 📊</h3>
-                    
-                    <div class="history-summary">
-                        <div class="summary-stats">
-                            <div class="summary-item">
-                                <span id="total-distance" class="summary-number">0.0</span>
-                                <span class="summary-label">総距離 (km)</span>
-                            </div>
-                            <div class="summary-item">
-                                <span id="total-duration" class="summary-number">0</span>
-                                <span class="summary-label">総時間 (分)</span>
-                            </div>
-                            <div class="summary-item">
-                                <span id="avg-distance" class="summary-number">0.0</span>
-                                <span class="summary-label">平均距離 (km)</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="history-filters">
-                        <button id="filter-all" class="filter-btn active">すべて</button>
-                        <button id="filter-week" class="filter-btn">今週</button>
-                        <button id="filter-month" class="filter-btn">今月</button>
-                    </div>
-                    
-                    <div id="history-list" class="history-list">
-                        <div class="loading-message">履歴を読み込み中...</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- プロフィールタブ -->
-            <div id="profile-tab" class="tab-content">
-                <div class="content">
-                    <div class="profile-section">
-                        <div class="avatar-upload-section">
-                            <div id="user-avatar" class="profile-avatar" role="button" tabindex="0">
-                                <img id="avatar-image" src="" alt="プロフィール画像" style="display: none;">
-                                <div id="default-avatar" class="default-avatar">
-                                    <div class="add-photo-icon">+</div>
-                                </div>
-                                <input type="file" id="avatar-input" accept="image/*" style="display: none;">
-                                <div id="photo-overlay" class="photo-overlay hidden">
-                                    <div class="overlay-content">
-                                        <button id="change-photo-btn" class="overlay-btn">写真を変更</button>
-                                        <button id="remove-photo-btn" class="overlay-btn remove">削除</button>
-                                        <button id="cancel-btn" class="overlay-btn cancel">キャンセル</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <h3 id="user-name">ユーザー名</h3>
-                        
-                        <div class="profile-form">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>お名前</label>
-                                    <input type="text" id="user-name-input" placeholder="お名前を入力">
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>愛犬の名前</label>
-                                    <input type="text" id="dog-name-input" placeholder="愛犬の名前を入力">
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>犬種</label>
-                                <select id="dog-breed-select">
-                                    <option value="">犬種を選択</option>
-                                    <option value="柴犬">柴犬</option>
-                                    <option value="トイプードル">トイプードル</option>
-                                    <option value="チワワ">チワワ</option>
-                                    <option value="ダックスフンド">ダックスフンド</option>
-                                    <option value="ポメラニアン">ポメラニアン</option>
-                                    <option value="ヨークシャーテリア">ヨークシャーテリア</option>
-                                    <option value="マルチーズ">マルチーズ</option>
-                                    <option value="シーズー">シーズー</option>
-                                    <option value="パグ">パグ</option>
-                                    <option value="フレンチブルドッグ">フレンチブルドッグ</option>
-                                    <option value="ブルドッグ">ブルドッグ</option>
-                                    <option value="ビーグル">ビーグル</option>
-                                    <option value="コーギー">コーギー</option>
-                                    <option value="ボーダーコリー">ボーダーコリー</option>
-                                    <option value="ゴールデンレトリバー">ゴールデンレトリバー</option>
-                                    <option value="ラブラドール">ラブラドール</option>
-                                    <option value="シベリアンハスキー">シベリアンハスキー</option>
-                                    <option value="ジャーマンシェパード">ジャーマンシェパード</option>
-                                    <option value="秋田犬">秋田犬</option>
-                                    <option value="日本スピッツ">日本スピッツ</option>
-                                    <option value="キャバリア">キャバリア</option>
-                                    <option value="アメリカンコッカースパニエル">アメリカンコッカースパニエル</option>
-                                    <option value="ミニチュアシュナウザー">ミニチュアシュナウザー</option>
-                                    <option value="ボストンテリア">ボストンテリア</option>
-                                    <option value="ジャックラッセルテリア">ジャックラッセルテリア</option>
-                                    <option value="イタリアングレーハウンド">イタリアングレーハウンド</option>
-                                    <option value="その他">その他</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>誕生日</label>
-                                    <input type="date" id="dog-birthday-input" min="1990-01-01" max="2030-12-31">
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>年齢</label>
-                                    <input type="text" id="dog-age-display" placeholder="誕生日から自動計算されます" readonly style="background: #f8f9fa; color: #666;">
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label>性別</label>
-                                    <select id="dog-gender-select">
-                                        <option value="">性別を選択</option>
-                                        <option value="オス">オス（♂）</option>
-                                        <option value="メス">メス（♀）</option>
-                                        <option value="未確認">未確認</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>性格・特徴</label>
-                                <textarea id="dog-personality-input" placeholder="愛犬の性格や特徴を教えてください"></textarea>
-                            </div>
-                            
-                            <button id="save-profile-btn" class="save-btn">プロフィールを保存</button>
-                        </div>
-                        
-                        <div class="stats-section">
-                            <h4>散歩記録</h4>
-                            <div class="stats">
-                                <div class="stat-item">
-                                    <span class="stat-number" id="total-walks">0</span>
-                                    <span class="stat-label">総散歩回数</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span class="stat-number" id="friends-count">0</span>
-                                    <span class="stat-label">友達</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 友達タブ -->
-            <div id="friends-tab" class="tab-content">
-                <div class="content">
-                    <div class="friends-header">
-                        <h3>友達リスト</h3>
-                        <div class="friends-controls">
-                            <button id="add-group-btn" class="add-group-btn">+ グループ追加</button>
-                            <button id="manage-groups-btn" class="manage-groups-btn">グループ管理</button>
-                        </div>
-                    </div>
-                    
-                    <div class="group-filters">
-                        <button class="group-filter-btn active" data-group="all">すべて</button>
-                        <button class="group-filter-btn" data-group="close-friends">親しい友達</button>
-                        <button class="group-filter-btn" data-group="walking-buddies">散歩仲間</button>
-                        <button class="group-filter-btn" data-group="park-friends">公園友達</button>
-                    </div>
-                    
-                    <div id="friends-list" class="friends-container">
-                        <!-- 動的にデータが追加されます -->
-                    </div>
-                </div>
-                
-                <!-- グループ管理モーダル -->
-                <div id="group-management-modal" class="modal hidden">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h4>グループ管理</h4>
-                            <button id="close-group-modal" class="close-modal-btn">×</button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="group-list">
-                                <div class="group-item">
-                                    <input type="text" class="group-name-input" placeholder="新しいグループ名">
-                                    <button class="add-new-group-btn">追加</button>
-                                </div>
-                                <div id="existing-groups">
-                                    <!-- 既存のグループが動的に追加されます -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 友達のグループ変更モーダル -->
-                <div id="friend-group-modal" class="modal hidden">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h4 id="friend-group-title">友達のグループを変更</h4>
-                            <button id="close-friend-group-modal" class="close-modal-btn">×</button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="friend-info">
-                                <div id="selected-friend-avatar" class="friend-modal-avatar">🐕</div>
-                                <div id="selected-friend-name" class="friend-modal-name">友達の名前</div>
-                            </div>
-                            <div class="group-selection">
-                                <h5>グループを選択:</h5>
-                                <div id="group-checkboxes">
-                                    <!-- グループのチェックボックスが動的に追加されます -->
-                                </div>
-                            </div>
-                            <div class="modal-actions">
-                                <button id="save-friend-groups" class="save-btn">保存</button>
-                                <button id="cancel-friend-groups" class="cancel-btn">キャンセル</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- メッセージタブ -->
-            <div id="messages-tab" class="tab-content">
-                <div class="content">
-                    <div id="message-list-view" class="message-view">
-                        <h3>メッセージ</h3>
-                        <div id="conversations-list" class="conversations-list">
-                            <!-- 会話リストが動的に追加されます -->
-                        </div>
-                    </div>
-                    
-                    <div id="message-chat-view" class="message-view hidden">
-                        <div class="chat-header">
-                            <button id="back-to-messages" class="back-btn">← 戻る</button>
-                            <div class="chat-info">
-                                <img id="chat-avatar" class="chat-avatar" src="" alt="">
-                                <div class="chat-name-info">
-                                    <h4 id="chat-name">友達の名前</h4>
-                                    <p id="chat-status" class="chat-status">オンライン</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="chat-messages" id="chat-messages">
-                            <!-- チャットメッセージが動的に追加されます -->
-                        </div>
-                        
-                        <div class="chat-input-area">
-                            <div class="input-container">
-                                <input type="text" id="message-input" placeholder="メッセージを入力..." maxlength="500">
-                                <button id="send-message" class="send-btn">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                        <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="currentColor"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
-    
-    <!-- QRコード友達追加モーダル -->
-    <div id="add-friend-modal" class="modal hidden">
+
+    <!-- モーダル -->
+    <div id="modal-overlay" class="modal-overlay hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h4>友達を追加</h4>
-                <button id="close-add-friend-modal" class="close-modal-btn">×</button>
+                <h3 id="modal-title">タイトル</h3>
+                <button id="modal-close" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <div class="modal-body">
-                <div class="qr-tabs">
-                    <button id="show-qr-tab" class="qr-tab-btn active">QRコードを表示</button>
-                    <button id="scan-qr-tab" class="qr-tab-btn">QRコードをスキャン</button>
-                </div>
-                
-                <div id="show-qr-section" class="qr-section">
-                    <h5>あなたのQRコード</h5>
-                    <p>このQRコードを友達にスキャンしてもらいましょう</p>
-                    <div id="qr-code-container" class="qr-container">
-                        <!-- QRコードがここに生成されます -->
-                    </div>
-                    <div class="user-info">
-                        <div id="qr-user-avatar" class="qr-avatar">🐕</div>
-                        <div id="qr-user-name" class="qr-name">ユーザー名</div>
-                    </div>
-                </div>
-                
-                <div id="scan-qr-section" class="qr-section hidden">
-                    <h5>QRコードをスキャン</h5>
-                    <p>友達のQRコードをカメラでスキャンしてください</p>
-                    <div id="camera-container" class="camera-container">
-                        <video id="camera-video" width="300" height="300" autoplay></video>
-                        <canvas id="camera-canvas" width="300" height="300" style="display: none;"></canvas>
-                    </div>
-                    <div class="scan-actions">
-                        <button id="start-camera-btn" class="action-btn">カメラを開始</button>
-                        <button id="stop-camera-btn" class="action-btn" style="display: none;">カメラを停止</button>
-                    </div>
-                    <div id="scan-result" class="scan-result">
-                        <!-- スキャン結果がここに表示されます -->
-                    </div>
-                </div>
+            <div id="modal-body" class="modal-body">
+                <!-- 動的コンテンツ -->
             </div>
         </div>
     </div>
 
-    <!-- QRコード生成ライブラリ -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
-    <!-- QRコードスキャンライブラリ -->
-    <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
-    <script type="module" src="js/app.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
