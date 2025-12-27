@@ -1560,3 +1560,34 @@ textarea:focus {
     display: inline-block;
     margin: 5px;
 }
+
+/* Moshimo Affiliate Fix - Prevent Overlay */
+.moshimo-affiliate-section {
+    margin-top: 15px !important;
+    padding: 10px 0 !important;
+    border-top: 1px solid #e0e0e0 !important;
+    position: relative !important;
+    z-index: 1 !important;
+    display: block !important;
+    clear: both !important;
+}
+
+.moshimo-affiliate-section > div[id^="msmaflink-"] {
+    position: relative !important;
+    display: block !important;
+    margin: 10px 0 !important;
+    width: 100% !important;
+}
+
+.shopping-label {
+    font-size: 14px !important;
+    color: #666 !important;
+    margin-bottom: 10px !important;
+    display: block !important;
+}
+
+/* Ensure product cards contain affiliate sections properly */
+.product-actions {
+    position: relative !important;
+    z-index: 1 !important;
+}
